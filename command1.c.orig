@@ -1,0 +1,539 @@
+/*************************************************************
+ *    ______                                                 *
+ *   /     /\  TinyFugue was derived from a client initially *
+ *  /   __/  \ written by Anton Rang (Tarrant) and later     *
+ *  |  / /\  | modified by Leo Plotkin (Grod).  The early    *
+ *  |  |/    | versions of TinyFugue written by Greg Hudson  *
+ *  |  X__/  | (Explorer_Bob).  The current version is       *
+ *  \ /      / written and maintained by Ken Keys (Hawkeye), *
+ *   \______/  who can be reached at kkeys@ucsd.edu.         *
+ *                                                           *
+ *             No copyright 1992, no rights reserved.        *
+ *             Fugue is in the public domain.                *
+ *************************************************************/
+
+/*****************************************************************
+ * Fugue command handlers, part 1                                *
+ *                                                               *
+ * Contents:                                                     *
+ * 1. Command table and declarations                             *
+ * 2. Binary search/execute routines, macro handlers             *
+ * 3. Command handlers:                                          *
+ *     A. Help subsystem                                         *
+ *     B. Worlds                                                 *
+ *     C. Processes (/quote and /repeat and related commands)    *
+ *     D. Watchdog routines                                      *
+ *     E. Miscellaneous routines                                 *
+ *                                                               *
+ * The other module contains flag and numeric runtime option     *
+ * handers, and all string-processing subsystem command (macros, *
+ * triggers, hilites, and gags).                                 *
+ *                                                               *
+ *****************************************************************/
+ 
+#include <stdio.h>
+#include <signal.h>
+#include <ctype.h>
+#include "tf.h"
+#include "dstring.h"
+#include "util.h"
+#include "history.h"
+#include "world.h"
+#include "socket.h"
+#include "output.h"
+#include "macro.h"
+#include "help.h"
+#include "process.h"
+#include "keyboard.h"
+
+extern int visual;
+
+Handler *FDECL(find_command,(char *cmd));
+static void FDECL(handle_macro_command,(char *cmd, char *args));
+
+void FDECL(handle_command,(char *cmdline, Stringp dest));
+
+static HANDLER (handle_addworld_command);
+static HANDLER (handle_dc_command);
+static HANDLER (handle_echo_command);
+static HANDLER (handle_grab_command);
+static HANDLER (handle_help_command);
+static HANDLER (handle_input_command);
+static HANDLER (handle_kill_command);
+static HANDLER (handle_lcd_command);
+static HANDLER (handle_listsockets_command);
+static HANDLER (handle_listworlds_command);
+static HANDLER (handle_ps_command);
+static HANDLER (handle_purgeworld_command);
+static HANDLER (handle_quit_command);
+static HANDLER (handle_quote_command);
+static HANDLER (handle_recall_command);
+static HANDLER (handle_repeat_command);
+static HANDLER (handle_saveworld_command);
+static HANDLER (handle_send_command);
+static HANDLER (handle_sh_command);
+static HANDLER (handle_trigger_command);
+static HANDLER (handle_unworld_command);
+static HANDLER (handle_version_command);
+static HANDLER (handle_world_command);
+extern HANDLER (handle_background_command);
+extern HANDLER (handle_bamf_command);
+extern HANDLER (handle_beep_command);
+extern HANDLER (handle_bind_command);
+extern HANDLER (handle_borg_command);
+extern HANDLER (handle_cat_command);
+extern HANDLER (handle_cleardone_command);
+extern HANDLER (handle_clearfull_command);
+extern HANDLER (handle_def_command);
+extern HANDLER (handle_dokey_command);
+extern HANDLER (handle_edit_command);
+extern HANDLER (handle_gag_command);
+extern HANDLER (handle_gpri_command);
+extern HANDLER (handle_hilite_command);
+extern HANDLER (handle_hook_command);
+extern HANDLER (handle_hpri_command);
+extern HANDLER (handle_isize_command);
+extern HANDLER (handle_kecho_command);
+extern HANDLER (handle_list_command);
+extern HANDLER (handle_load_command);
+extern HANDLER (handle_log_command);
+extern HANDLER (handle_login_command);
+extern HANDLER (handle_lp_command);
+extern HANDLER (handle_lpquote_command);
+extern HANDLER (handle_mecho_command);
+extern HANDLER (handle_more_command);
+extern HANDLER (handle_nogag_command);
+extern HANDLER (handle_nohilite_command);
+extern HANDLER (handle_ptime_command);
+extern HANDLER (handle_purge_command);
+extern HANDLER (handle_qecho_command);
+extern HANDLER (handle_quiet_command);
+extern HANDLER (handle_quitdone_command);
+extern HANDLER (handle_redef_command);
+extern HANDLER (handle_save_command);
+extern HANDLER (handle_shpause_command);
+extern HANDLER (handle_sockmload_command);
+extern HANDLER (handle_sub_command);
+extern HANDLER (handle_trig_command);
+extern HANDLER (handle_trigc_command);
+extern HANDLER (handle_trigp_command);
+extern HANDLER (handle_trigpc_command);
+extern HANDLER (handle_unbind_command);
+extern HANDLER (handle_undef_command);
+extern HANDLER (handle_undefn_command);
+extern HANDLER (handle_undeft_command);
+extern HANDLER (handle_unhook_command);
+extern HANDLER (handle_untrig_command);
+extern HANDLER (handle_visual_command);
+extern HANDLER (handle_watchdog_command);
+extern HANDLER (handle_watchname_command);
+extern HANDLER (handle_wrap_command);
+extern HANDLER (handle_wrapspace_command);
+
+typedef struct Command {
+    char *name;
+    Handler *func;
+} Command;
+
+  /* It is IMPORTANT that the commands be in alphabetical order! */
+
+static Command cmd_table[] =
+{
+  { "ADDWORLD"    , handle_addworld_command    },
+  { "BACKGROUND"  , handle_background_command  },
+  { "BAMF"        , handle_bamf_command        },
+  { "BEEP"        , handle_beep_command        },
+  { "BIND"        , handle_bind_command        },
+  { "BORG"        , handle_borg_command        },
+  { "CAT"         , handle_cat_command         },
+  { "CLEARDONE"   , handle_cleardone_command   },
+  { "CLEARFULL"   , handle_clearfull_command   },
+  { "DC"          , handle_dc_command          },
+  { "DEF"         , handle_def_command         },
+  { "DOKEY"       , handle_dokey_command       },
+  { "ECHO"        , handle_echo_command        },
+  { "EDIT"        , handle_edit_command        },
+  { "GAG"         , handle_gag_command         },
+  { "GPRI"        , handle_gpri_command        },
+  { "GRAB"        , handle_grab_command        },
+  { "HELP"        , handle_help_command        },
+  { "HILITE"      , handle_hilite_command      },
+  { "HOOK"        , handle_hook_command        },
+  { "HPRI"        , handle_hpri_command        },
+  { "INPUT"       , handle_input_command       },
+  { "ISIZE"       , handle_isize_command       },
+  { "KECHO"       , handle_kecho_command       },
+  { "KILL"        , handle_kill_command        },
+  { "LCD"         , handle_lcd_command         },
+  { "LIST"        , handle_list_command        },
+  { "LISTSOCKETS" , handle_listsockets_command },
+  { "LISTWORLDS"  , handle_listworlds_command  },
+  { "LOAD"        , handle_load_command        },
+  { "LOG"         , handle_log_command         },
+  { "LOGIN"       , handle_login_command       },
+  { "LP"          , handle_lp_command          },
+  { "LPQUOTE"     , handle_lpquote_command     },
+  { "MECHO"       , handle_mecho_command       },
+  { "MORE"        , handle_more_command        },
+  { "NOGAG"       , handle_nogag_command       },
+  { "NOHILITE"    , handle_nohilite_command    },
+  { "PS"          , handle_ps_command          },
+  { "PTIME"       , handle_ptime_command       },
+  { "PURGE"       , handle_purge_command       },
+  { "PURGEWORLD"  , handle_purgeworld_command  },
+  { "QECHO"       , handle_qecho_command       },
+  { "QUIET"       , handle_quiet_command       },
+  { "QUIT"        , handle_quit_command        },
+  { "QUITDONE"    , handle_quitdone_command    },
+  { "QUOTE"       , handle_quote_command       },
+  { "RECALL"      , handle_recall_command      },
+  { "REDEF"       , handle_redef_command       },
+  { "REPEAT"      , handle_repeat_command      },
+  { "SAVE"        , handle_save_command        },
+  { "SAVEWORLD"   , handle_saveworld_command   },
+  { "SEND"        , handle_send_command        },
+  { "SH"          , handle_sh_command          },
+  { "SHPAUSE"     , handle_shpause_command     },
+  { "SOCKMLOAD"   , handle_sockmload_command   },
+  { "SUB"         , handle_sub_command         },
+  { "TRIG"        , handle_trig_command        },
+  { "TRIGC"       , handle_trigc_command       },
+  { "TRIGGER"     , handle_trigger_command     },  
+  { "TRIGP"       , handle_trigp_command       },
+  { "TRIGPC"      , handle_trigpc_command      },
+  { "UNBIND"      , handle_unbind_command      },
+  { "UNDEF"       , handle_undef_command       },
+  { "UNDEFN"      , handle_undefn_command      },
+  { "UNDEFT"      , handle_undeft_command      },
+  { "UNHOOK"      , handle_unhook_command      },
+  { "UNTRIG"      , handle_untrig_command      },
+  { "UNWORLD"     , handle_unworld_command     },
+  { "VERSION"     , handle_version_command     },
+  { "VISUAL"      , handle_visual_command      },
+  { "WATCHDOG"    , handle_watchdog_command    },
+  { "WATCHNAME"   , handle_watchname_command   },
+  { "WORLD"       , handle_world_command       },
+  { "WRAP"        , handle_wrap_command        },
+  { "WRAPSPACE"   , handle_wrapspace_command   }
+};
+
+#define NUM_COMMANDS (sizeof(cmd_table) / sizeof(Command))
+
+/*****************************************
+ * Find, process and run commands/macros *
+ *****************************************/
+
+void handle_command(cmd_line, dest)
+    char *cmd_line;
+    String *dest;
+{
+    char *cmd, *args;
+    Handler *handler;
+
+    while (*cmd_line == '/') cmd_line++;
+    if (!*cmd_line || isspace(*cmd_line)) return;
+    cmd = STRDUP(cmd_line);
+    for (args = cmd; *args && !isspace(*args); args++);
+    if (*args) *args++ = '\0';
+    stripstr(cmd);
+    stripstr(args);
+    if (handler = find_command(cmd)) (*handler)(args);
+    else if (dest == NULL) handle_macro_command(cmd, args);
+    else do_macro(cmd, args, dest, 0);
+    FREE(cmd);
+}
+
+Handler *find_command(cmd)
+    char *cmd;
+{
+    int bottom, top, mid, diff;
+
+    bottom = 0;
+    top = NUM_COMMANDS - 1;
+
+    while (bottom <= top) {
+        mid = (top + bottom) / 2;
+        diff = cstrcmp(cmd, cmd_table[mid].name);
+        if (diff == 0) return (cmd_table[mid].func);
+        else if (diff < 0) top = mid - 1;
+        else bottom = mid + 1;
+    }
+    return NULL;
+}
+
+static void handle_macro_command(cmd, args)
+    char *cmd;
+    char *args;
+{
+    Stringp expanded;
+
+    Stringinit(expanded);
+    do_macro(cmd, args, expanded, 1);
+    Stringfree(expanded);
+}
+
+static void handle_trigger_command(args)
+    char *args;
+{
+    extern int borg, background;
+
+    if (background) background++;
+    if (borg) check_trigger(args);
+    if (background) background--;
+}
+
+static void handle_help_command(args)
+    char *args;
+{
+    do_help(args);
+}
+
+/**********
+ * Worlds *
+ **********/
+
+static void handle_listworlds_command(args)
+    char *args;
+{
+    int full = FALSE;
+    char c;
+
+    startopt(args, "c");
+    while (c = nextopt(&args, NULL)) {
+        switch (c) {
+            case 'c':  full = TRUE; break;
+            default:   return;
+        }
+    }
+    if (*args && !smatch_check(args)) return;
+    list_worlds(full, *args ? args : NULL, NULL);
+}
+
+static void handle_listsockets_command(args)
+    char *args;
+{
+    if (*args) oputs("% Arguments disregarded.");
+    listsockets();
+}
+
+static void handle_world_command(args)
+    char *args;
+{
+    World *where = NULL;
+    int autologin;
+    char *port;
+    char name[16];          /* big enough for "(unnamedNNNNNN)" */
+    static int unnamed = 1;
+    extern int login;
+
+    autologin = login;
+    if (*args == '-') {
+        autologin = FALSE;
+        args++;
+    }
+
+    if (!*args) {
+        if ((where = get_world_header()) == NULL) 
+            oputs("% No default world is set.");
+    } else if ((port = strchr(args, ' ')) == NULL) {
+        if ((where = find_world(args)) == NULL)
+            do_hook(H_CONFAIL, "%% Connection to %s failed: %s", "%s %s",
+                args, "world unknown");
+    } else if (strchr(port + 1, ' ')) {
+        oputs("% Too many arguments.");
+    } else {
+        *port++ = '\0';
+        sprintf(name, "(unnamed%d)", unnamed++);
+        where = new_world(name, "", "", args, port, "");
+        where->flags |= WORLD_TEMP;
+    }
+
+    if (where) connect_to(where, autologin);
+}
+
+static void handle_addworld_command(args)
+    char *args;
+{
+    if (*args) addworld(args);
+}
+
+static void handle_unworld_command(args)
+    char *args;
+{
+    if (*args) remove_world(args);
+}
+
+static void handle_purgeworld_command(args)
+    char *args;
+{
+    if (*args) purge_world(args);
+}
+
+static void handle_saveworld_command(args)
+    char *args;
+{
+    write_worlds(args);
+}
+
+static void handle_dc_command(args)
+    char *args;
+{
+    disconnect(args);
+}
+
+/*************
+ * Processes *
+ *************/
+
+static void handle_quote_command(args)  /* quote file/command/history */
+    char *args;
+{
+    if (*args) start_quote(args);
+}
+
+static void handle_repeat_command(args) /* repeat action n times */
+    char *args;
+{
+    if (*args) start_repeat(args);
+}
+
+static void handle_kill_command(args)
+    char *args;
+{
+     if (*args) do_kill(atoi(args));
+}
+
+static void handle_ps_command(args)
+    char *args;
+{
+    if (*args) oputs("% Arguments disregarded.");
+    do_ps();
+}
+
+/********
+ * Misc *
+ ********/
+
+
+static void handle_quit_command(args)
+    char *args;
+{
+    set_done();
+}
+
+static void handle_recall_command(args)
+    char *args;
+{
+    recall_history(args, NULL);
+}
+
+static void handle_sh_command(args)
+    char *args;
+{
+    char *shell;
+    extern int shpause;
+
+    if (*args) {
+        shell = args;
+        do_hook(H_SHELL, "%% Executing %s: \"%s\"", "%s %s", "command", shell);
+    } else {
+        if ((shell = getenv("SHELL")) == NULL) shell = "/bin/sh";
+        do_hook(H_SHELL, "%% Executing %s: %s", "%s %s", "shell", shell);
+    }
+    if (visual) fix_screen();
+    cooked_echo_mode();
+    system(shell);
+    if (shpause) {
+        oputs("% Done-- press a key to return.");
+        getch();
+    }
+    cbreak_noecho_mode();
+    setup_screen();
+#ifdef MAILDELAY
+    check_mail();
+#endif
+    do_hook(H_RESUME, "%% Resuming TinyFugue", "");
+}
+
+static void handle_version_command(args)
+    char *args;
+{
+    extern char version[];
+    oprintf("%% %s.", version);
+}
+
+static void handle_lcd_command(args)
+    char *args;
+{
+#ifndef SYSVTTY
+# ifndef hpux
+    smallstr buffer;
+# endif
+#endif
+    STATIC_BUFFER(dirname)
+
+    Stringcpy(dirname, args);
+    Stringexpand(dirname);
+    if(dirname->len && chdir(dirname->s) == -1)
+        oprintf("%% Can't change to %S", dirname);
+
+#ifndef SYSVTTY
+# ifndef hpux
+    oprintf("%% Current directory is %s", getwd(buffer));
+# endif
+#endif
+}
+
+static void handle_send_command(args)
+    char *args;
+{
+    if (*args) do_send(args);
+}
+
+static void handle_echo_command(args)
+    char *args;
+{
+    char c;
+    short attrs = 0, wflag = 0, nflag = 0;
+    World *world = NULL;
+
+    startopt(args, "a:w:");
+    while (c = nextopt(&args, NULL)) {
+        switch (c) {
+        case 'a': case 'f':
+            if ((attrs |= parse_attrs(args)) < 0) return;
+            break;
+        case 'w':
+            wflag = 1;
+            if (!*args) world = xworld();
+            else if ((world = find_world(args)) == NULL) {
+                oprintf("%% World %s not found.", args);
+                return;
+            }
+            break;
+        default:
+            return;
+        }
+    }
+    if (!wflag) output(args, nflag ? attrs : (attrs | F_NEWLINE));
+    else if (world) world_output(world, args, attrs);
+    else oputs("% No current world.");
+}
+
+static void handle_input_command(args)
+    char *args;
+{
+    handle_input_string(args, strlen(args));
+}
+
+static void handle_grab_command(args)
+    char *args;
+{
+    extern int keyboard_pos;
+    extern Stringp keybuf;
+
+    Stringcpy(keybuf, args);
+    keyboard_pos = keybuf->len;
+    if (visual && is_refresh_pending()) do_line_refresh();
+    do_replace();
+}

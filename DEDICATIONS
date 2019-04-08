@@ -1,0 +1,22 @@
+Thanks to:
+
+Russ Smith (Random), for writing the first tinyclient.
+
+Anton Rang (Tarrant), for writing the client this whole thing was based
+on, and for finding some minor bugs in earlier versions.
+
+Greg Hudson (Explorer_Bob), for writing TF versions up to 1.5.3, without
+which I would have never gotten into this mess.
+
+Leo Plotkin (Grod), for helping Greg and for writing a beautiful (for
+Grodcode), albeit case-sensitive, match routine.
+
+David Moore (OliverJones), Ben Jackson (Ben), the users of
+glia.biostr.washington.edu, and everyone else who tested, found bugs,
+or came up with suggestions.
+
+All my fans, even if they come up with the most outrageously false
+statements (e.g. "Tinyfugue is a work of art.").
+
+All my detractors, for coming up with good one-liners.
+

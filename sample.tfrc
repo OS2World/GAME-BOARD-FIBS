@@ -1,0 +1,25 @@
+;;;; These are some useful commands for your configuration file (~/.tfrc).
+;;;; Feel free to customize these commands to your own tastes, or ignore them.
+
+;;; Turn on windowing mode.
+/visual on
+
+;;; Turn on paging
+; /more on
+
+;;; Turn on introductory MUD text suppression.
+/quiet on
+
+;;; Load TinyFugue files.
+/loadworld
+/loadhilite
+/loadgag
+/loaddef
+/loadbind
+/loadtrig
+
+;;; LP/DIKU stuff
+; /lp on
+; /lpquote on
+;; Automatic login using LP/DIKU format (/login must be ON)
+; /def -p10 -h"LOGIN *" = %2%;%3

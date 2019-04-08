@@ -1,0 +1,24 @@
+This archives contains a version of TinyFugue that uses an
+additional window to display Backgammon boards. The original
+code is still in this archive (see the files named *.orig).
+To use this client with the FIBS Backgammon server you have
+to use the new command '/board on' after starting the client
+(or just put in into your .tfrc file). You also have to make
+sure to tell the backgammon server to use boardstyle 3
+(Do this by typing 'set boardstyle 3').
+
+The patches were made by
+
+David Eggert (eggertd@sanibel.csee.usf.edu)
+  (window routines)
+Andreas Schneider (marvin@rog.rwth-aachen.de)
+  (board printing routines and /board command)
+
+NOTE:
+This is the very first version of the patched client.
+It may not work on all systems or under all conditions.
+Try to look at the source if you have problems. The file
+fibsboard.c can be used for other clients that you might
+want to patch yourself. Bug reports are as always welcome,
+but please don't ask for additional features/boardstyles.
+Look at the source and try to write a better client yourself.

@@ -1,0 +1,224 @@
+                   TINYFUGUE INSTALLATION FILE
+                   ---------------------------
+
+Installing TinyFugue is quite easy on most systems:  simply type "make
+install".  However, it is designed to handle many different system and
+terminal types and public installation, so you may have to make some
+minor changes to the Makefile.
+
+
+File Locations
+--------------
+
+The default file locations are based on the HOME variable.  Some versions
+of make do not import HOME from the environment.  If, after installing,
+TF tries to load "/.tfrc", you probably have one of these versions of make.
+The solution is to define HOME yourself in the Makefile, like this:
+    HOME = /my/home/directory
+
+The Makefile defines the names of the tf executable file (EXE), the
+helpfile (HELPFILE), the default macro file (TFLIBRARY), and the manual
+page (MANPAGE).  These should be full path names.  The default
+directories for these are your home directory; public locations are
+also suggested, if you want to allow other users to run TF.  Setting
+the MANPAGE or HELPFILE filenames to blank will disable installation of
+that file.
+
+IMPORTANT:  If you move or change the name of the macro library after
+installing, you must edit the TFLIBRARY line in the Makefile, and run
+"make install" again.  If you move or change the name of the helpfile
+after installing, you can either edit the HELPFILE line in the Makefile
+and "make install" again, or you can just change the HELPFILE macro in
+the macro library.
+
+
+Public Installation
+-------------------
+
+A set of file locations in /usr/local is suggested in the Makefile.
+Uncomment these lines, and comment out the single-user defaults.
+"make install" will then put all files in their proper location with
+the proper permissions.
+
+
+Make Options
+------------
+If you're not sure which to use, use "make install".
+
+make install    Compile tf, (optionally) compile the Connector, build the
+                help index, build macro library, and put all files in their
+                proper locations.
+make uninstall  Remove tf, Connector, help file and index, and macro library.
+make clean      Remove object files and other junk from source directory.
+make tf         Compile tf.
+make TFCONNECT  Compile and install Connector.
+make TFLIBRARY  Build and install standard macro library.
+make HELP       Build and install helpfiles.
+
+
+Modifications
+-------------
+
+If you make any modifications to the source (other than the Makefile),
+please add your name or other identification to the version[] variable
+in main.c (primarily to avoid confusion).  I ask that any redistributions
+contain my name, all the files from the orginal distribution, and the
+location of the original source.
+
+
+System types
+------------
+
+Also see the section on Nonblocking Connections.
+
+BSD 4.2 or 4.3-derived systems:  No modifications necessary.
+
+Dual-universe with SysV termio:  add -DSYSVTTY to the FLAGS line in 
+   the Makefile.
+
+SysV with WINS:  add -DSYSVTTY and -DWINS to the FLAGS line in the
+   Makefile.  Also add '-lnet -lnsl_s' to the LIBRARIES line, in
+   that order.
+
+Apollo DomainOS, using cc:  add -U__STDC__ to the FLAGS line.
+
+
+Termcap
+-------
+
+Fugue's Makefile is originally configured to run with the termcap 
+library.  If your termcap library is buggy, you have two 
+alternatives:
+
+1. You can erase the -DTERMCAP and -ltermcap from the FLAGS and 
+   LIBRARIES lines respectively in the Makefile.  Fugue will then 
+   operate without hilites, without visual mode as an option.
+
+2. You can erase the -DTERMCAP and -ltermcap as above, and then 
+   add -DHARDCODE to the FLAGS line.  This will cause tf to 
+   emulate a 25x80 VT-100 or ANSI terminal.
+
+   You can change the default lines and columns by changing the
+   #DEFINEs in output.c near the top of the file.  It is recommended
+   that you check the attributes_on() and attributes_off() functions
+   inside the HARDCODE code block of termcap functions to see if the
+   strings they output are ones that will work they way you want them
+   to with your particular terminal emulation.  The ones currently used
+   are "<ESC>[4m" for underline, "<ESC>[7m" for reverse, "<ESC>[5m" for
+   flashing, "<ESC>[1m" for hilite, and "<ESC>[m" for attributes off.
+
+   If you are not using VT-100 or ANSI and wish to hardcode your 
+   terminal sequences, simply go into the HARDCODE code block of 
+   termcap functions and change the sequences to ones that will 
+   work.  Two things to note:
+
+   A. The upper-left corner of the screen for VT-100 and ANSI is 
+      (1,1).  If your terminal type uses (0,0), make sure to 
+      decrement the x and y arguments in the sprintf() call in xy().
+
+   B. Not all terminal emulations have the capability to set the
+      scroll area.  If you cannot do this, have the scroll()
+      macro do nothing, and in the HARDCODE code block in init_term()
+      set have_scroll = 0 instead of 1.
+
+
+Screen size
+-----------
+
+TF initially determines the screen size using the termcap capabilities
+or the defaults in output.c.  It also attempts to read the window size
+from the tty at startup and whenever you change your window size,
+although it may fail to do this if the window size in the tty hasn't
+been set or is not supported by your system.
+
+
+Mail checking
+-------------
+
+Tinyfugue defaults to checking mail every sixty seconds.  This comes
+from the -DMAILDELAY=60 on the Makefile FLAGS line.  You can get rid
+of mail checking by eliminating this option, or modify the delay by
+changing that number.
+
+TinyFugue checks the MAIL environment variable for the name of the mail
+file (MAIL is usually set in sh, but not csh).  If MAIL is not set, it
+will look for a file with your user name in MAILDIR, defined in tf.h.
+Some dual-universe systems may use "/usr/mail" instead of
+"/usr/spool/mail" as the mail path.  If this is the case, replace:
+    #define MAILDIR "/usr/spool/mail/"
+with:
+    #define MAILDIR "/usr/mail/"
+in the file tf.h.  Remember the trailing '/'.  Other mail paths can
+obviously also be used.  If the path is incorrect, TF will not complain
+but mail checking will not occur.
+
+
+LP-MUDs
+-------
+
+With /lp on, Tinyfugue's method of dealing with LP prompts is to
+attempt to recognize them using a delay of 1/4 second, and treat
+prompts and input as a cohesive block, so they are refreshed together
+in non-visual mode and both appear in the input window in visual mode.
+
+The delay can be changed by putting -DLP_SWAIT=<seconds> and 
+-DLP_UWAIT=<microseconds> (default is 0 and 250000 respectively; 
+you need define only the one or other you want to change) on the 
+FLAGS line of the Makefile.
+
+Delay recognition will not always work; the more the delay, the 
+more annoying the wait between receiving the prompt and displaying 
+it will be, and the more the chance of the prompt being 
+concatenated onto the next socket line will be.  You can have 
+prompts by the old method by putting -DOLD_LPPROMPTS on the FLAGS 
+line of the Makefile.  This is not as aesthetic as the default 
+method and tends to allow prompts to run together with regular 
+socket input, but will not cause the quirks that result when TF 
+confuses a partial line with a prompt.
+
+
+Nonblocking Connections
+-----------------------
+
+On some systems, TF can be compiled to perform nonblocking connections
+to worlds.  That is, if a new /world command does not complete right
+away because of net lag, TF will continue trying in the background,
+allowing you to do other things.  It does this by running the connect()
+in a child process.  Nonblocking connect can be very nice on fast
+forking systems, but on slower machines can be annoying.  TF requires
+either socketpair() and sendmsg() (found in 4.3 BSD and most "modern"
+systems); OR pipe() with file descriptor passing, and the I_SENDFD and
+I_RECVFD ioctl() calls (found in System V Revision 4, but not SVR3).
+To install this option, you must make these changes to the Makefile:
+add either -DCONNECT_BSD or -DCONNECT_SVR4 to the CONNECT line, and
+define TFCONNECT as the full path of the connection server
+(/usr/local/bin/tf.connect is recomended).
+
+
+Miscellaneous
+-------------
+
+If your compiler is complaining about doubly declaring or defining
+strstr, remove the -D_STRSTR from the FLAGS line.
+
+If you want TF to snarf blank lines (display them locally, but not 
+send them to the remote) add -DSNARF_BLANKS.
+
+If you want to be able to specify multiple-word arguments using " and '
+quotes (for world fields and macro arguments), add -DQUOTED_ARGS to
+the FLAGS line.
+
+A "refresh" is a redisplaying of your input in non-visual mode after
+being overwritten by a socket line.  If you want to change the time it
+takes for refreshes to occur after socket lines , you can do
+-DREFRESH_TIME=<x>, where <x> is a number in microseconds (defaults to
+250000, or 1/4 second).
+
+If you don't want TF to catch coredumps, add -DNO_COREHANDLERS.
+
+If your compiler is non-ANSI but does support ANSI-style prototypes, you
+can add -DPROTOTYPES to the FLAGS line.
+
+You can reduce the executable size slightly by using "strip tf"
+after compiling.
+

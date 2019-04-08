@@ -1,0 +1,230 @@
+.TH TF 1 LOCAL
+.SH NAME
+tf \- TinyFugue, a MUD client
+.SH SYNOPSIS
+.B "tf [-f\fIfile\fB] [-ln] [\fIworld\fB]"
+.br
+.B "tf [-f\fIfile\fB] \fIhost\fB \fIport\fB"
+.SH DESCRIPTION
+\fITinyFugue\fR (also known as "Fugue" or "TF") is a line-based client
+for connecting to MUD servers (especially TinyMUD-style MUDs).
+.PP
+Most of the \fITF\fR documentation is in the help file, which may be read
+with the "/help" command.
+The tf macro library should define the name of the help file in the
+\fBHELPFILE\fR macro.
+This manual page may, unfortunately, be obsolete in certain
+ways; however, the helpfile will usually be up-to-date.
+.PP
+\fITinyFugue\fR is larger than most MUD clients, and has many more features.
+The goal is to provide the most functionality in a client that still
+maintains the user-friendliness of \fITinytalk\fR.
+Clients with extension languages such as \fITcltt\fR or \fIVaporTalk\fR
+can do more in certain areas, but are considerably harder to learn.
+\fITF\fR provides most of these abilities in such a manner that learning to use
+any one function is relatively easy.
+See the NOTES section for a list of backward incompatablities.
+.PP
+Because I am continually adding new features and changing the code,
+\fITF\fR sometimes becomes less stable in a new release.
+For this reason, all \fITF\fR versions so far have been labeled "beta" or even
+"alpha", and I leave some older versions at the FTP site where I distribute
+\fITF\fR (ferkel.ucsb.edu), which do not have all the current features but
+may have fewer bugs than the most recent release.
+
+.SH "COMMAND LINE ARGUMENTS"
+\fITF\fR will try to connect to \fBworld\fR.  If \fBworld\fR is omitted, it will
+try to connect to the first world defined in the configuration file(s).
+.PP
+\fITF\fR with \fBhost\fR and \fBport\fR arguments will define a temporary world
+and try to connect to it.
+The \fBhost\fR may be an IP number or regular name format.
+.PP
+If no world is specified, or \fITF\fR can not connect to the specified world,
+\fITF\fR will start up in unconnected mode.
+.PP
+OPTIONS
+.IP "-f\fIfile\fR"
+Load \fIfile\fR instead of ~/.tfrc at startup.
+.IP "-l"
+Disable automatic login (useful for LP-MUDs).
+.IP "-n"
+Do not connect to any world at startup.
+
+
+.SH FEATURES
+Among other things, \fITF\fR allows you to:
+.sp
+Divide the screen into two parts, for input and output, with flexible
+handling of input (/visual mode)
+.sp
+Connect to multiple worlds and switch between them
+.sp
+Wrap MUD output at the edge of the screen
+.sp
+Edit text in the input buffer
+.sp
+Recall previous commands
+.sp
+Modify key sequences used to perform editing functions
+.sp
+Bind commands to key sequences
+.sp
+Define complex macros to perform MUD tasks easily
+.sp
+Create triggers which automatically perform certain tasks when certain
+output is received from the MUD
+.sp
+Modify existing macros using either a command format or interactive
+editing
+.sp
+Support TinyMUD "portals" that automatically switch from world to
+world
+.sp
+Hilite or gag text patterns
+.sp
+Suppress frequently repeated text ("spamming")
+.sp
+Automatically log into a TinyMUD world and, with a little bit of
+effort in setting up, an LP-MUD world
+.sp
+Send a text file to the MUD in flexible ways, or locally echo it
+.sp
+Send the output of a system command to the MUD, or locally echo it
+.sp
+Send text previously received from the MUD to the MUD, or locally echo it
+.sp
+Repeat a MUD or \fITF\fR command a number of times
+.sp
+Do the above four things at varying intervals, or at a rapid-fire rate
+.sp
+Log a session to a file
+.sp
+Support, to a certain extent, the prompts in an LP-MUD.
+.sp
+Page output using a --More-- prompt
+.sp
+Recall previously received MUD text
+
+.SH "CONFIGURATION FILES"
+.PP
+\fITF\fR will attempt to read two files when starting.  The first is a public
+configuration file, defined by the person who installed the copy of \fITF\fR
+you are using (named "tf.library", probably in /usr/local/lib or under the
+home directory of the installer).  The macro library should define
+the \fBHELPFILE\fR macro, and probably also defines some other useful
+macros for compatibilty with older versions of \fITF.\fR
+
+Next,
+\fITF\fR will attempt to read your personal configuration file,
+"$HOME/.tfrc", in which you can put any \fITF\fR commands you want executed
+automatically at startup.  One of the most common commands used in a
+\fITF\fR configuration file is /load, so you can keep
+groups of commands in separate files.  Because you can modify your
+worlds, macros, triggers, hooks, hilites, gags, and key bindings from
+within \fITF\fR, and then save them back to the file with the /save command,
+you can modify these things without directly editing the files, if the
+/load command is used.
+
+For backward compatability, if ~/.tfrc can not be found, \fITF\fR will try
+to read the \fITinyTalk\fR configuration file.
+Its name defautls to $HOME/.tinytalk, or can be defined by the TINYTALK
+environment variable.
+This file may start with a list of worlds that will be defined as if with
+/addworld.
+This is not recommended; it may not be supported in future releases.
+
+.SH HISTORY
+Anton Rang (Tarrant) in February of 1990 released \fITinytalk\fR,
+the first Tinyclient with any great number of features, including
+hiliting and suppression of text, simple triggers, and separating input and
+output on the screen.
+Leo Plotkin (Grod) made rather extensive modifications to \fITinytalk\fR
+to produce \fITinywar,\fR which was plagued with some
+serious bugs and was never officially released (the phrase "Tinywar
+doesn't exist" is often quoted), and is now an unsupported client.
+\fITF\fR began when Greg Hudson (Explorer_Bob) merged many of the new
+features of \fITinywar\fR back into \fITinyTalk,\fR
+and added many new features of his own, most notably the windowing system.
+Some of the code in Greg's releases was contributed by Leo Plotkin.
+After Greg moved on to \fIVaporTalk,\fR Ken Keys (Hawkeye) took over design
+and maintenance of \fITF\fR in July 1991, and continues to make improvements
+in features and performance.
+.PP
+The code size of \fITF\fR has surpassed 350K (unstripped),
+and is 2-3 times the size of \fITinytalk.\fR
+It is, in fact, more than three times the size of a number of existing servers.
+As of v2.1 beta, it has 76 builtin commands, each documented in the helpfile,
+and 69 standard library macros.
+.PP
+It has been stated that \fITF\fR is the most-used client in MUDdom at the
+current time.
+I haven't taken a poll, but I wouldn't be surprised.
+
+.SH REVIEWS
+\fITF\fR has significantly changed the tinyclient world.  It has a number of
+merits and a number of flaws, and has frequently
+been criticized (mostly out of boredom; nobody takes this business too
+seriously) as having too many features and being too damn big.
+.PP
+	"Tinywar doesn't exist; TinyFugue merely shouldn't."
+-- Coined by Woodlock, I believe.
+.PP
+	"TinyFugue is a work of art."
+-- Binder, obviously after having too much to drink.
+.PP
+	"TinyFugue is the biggest hack since the platform it was built on."
+-- Explorer_Bob, in one of his lucid moments.
+.PP
+The New York Times, the Christian Science Monitor and the Washington
+Post all refused to comment.
+
+.SH AUTHOR
+\fITF\fR is currently supported by Ken Keys, who may be contacted by e-mail at
+kkeys@ucsd.edu.
+
+.SH BACKWARD COMPATIBILTY
+.PP
+VERSION 2.1
+.PP
+The CONNECT hook is now called before the LOGIN hook.  In 2.0, CONNECT was
+called after autologin.
+.PP
+VERSION 2.0
+.PP
+In versions prior to 2.0, <space> was used to scroll the pager; 2.0 uses <tab>
+as the default, to allow the pager to be nonblocking.
+.PP
+\fITinytalk\fR style name gags and hilites are no longer supported.
+You must use the '*' wildcard explicitly, as in '/hilite hawkeye*'.
+.PP
+\fITinytalk\fR style page and whisper hilites are no longer supported.
+However, /hilite_page and /hilite_whisper macros are provided in the
+default macro library.
+.PP
+The .tinytalk file may not be supported in the future; use .tfrc instead.
+.PP
+The '-' command line option in versions prior to 2.0 is no longer supported,
+and has been replaced with '-l'.
+.PP
+The TINYPREFIX and TINYHELP environment variables are no longer used.
+Filenames can be defined at runtime with the MACROFILE, HILITEFILE, GAGFILE,
+TRIGFILE, HOOKFILE, BINDFILE, WORLDFILE, and HELPFILE macros.
+
+.SH BUGS
+.PP
+Doing /sh, suspending the job, and then resuming either confuses
+\fITF\fR or abandons the child process.
+.PP
+\fITF\fR does not take advantage of terminals with insert and delete character
+capabilities.
+.PP
+When unterbamfing, the old connection should not be closed until the
+new connection succeeds.
+.PP
+If a command quote (/quote !) reads a partial line from the pipe, the read
+will block until the rest of the line is read.
+
+.SH WARNINGS
+The Surgeon General has determined that MUDding can be detrimental to
+your GPA.

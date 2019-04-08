@@ -1,0 +1,192 @@
+;;;; TinyFugue version 2.1
+;;;; standard macro library
+
+;;;; The commands in this file are essential to the correct operation of TF.
+;;;; This library is as much a part of TF 2.1 as the executable file.  The
+;;;; library is designed so that it can be used by one or many users.  If
+;;;; you wish to modify any of the defaults defined here, you should do
+;;;; so in your $HOME/.tfrc (note that "/redef on" may be necessary first).
+;;;; Exception:  administrators of a public TF copy may wish to modify some
+;;;; definitions of general interest (e.g., a site specific HELPFILE, or
+;;;; the name of the compression program).
+
+;;; HELPFILE is defined during installation.  If you have not yet installed,
+;;; do not edit this macro.  Edit this only if you decided to move the
+;;; helpfile after installation.
+/def -i HELPFILE	= __HELPFILE__
+
+;;; file compression
+;;; COMPRESS_READ should contain a command that take a filename as an
+;;; argument, and prints its output on stdout.
+
+/def -i COMPRESS_SUFFIX = .Z
+/def -i COMPRESS_READ = zcat
+;; /def -i COMPRESS_SUFFIX = .z
+;; /def -i COMPRESS_READ = pcat
+
+;;;; --------------------------------------------- ;;;;
+;;;; You should not edit anything below this point ;;;;
+;;;; --------------------------------------------- ;;;;
+
+;;; default bindings
+;; TF is almost useless without these.
+
+/def -i -b"^J"    = /DOKEY NEWLINE
+/def -i -b"^P"    = /DOKEY RECALLB
+/def -i -b"^N"    = /DOKEY RECALLF
+/def -i -b"^[b"   = /DOKEY SOCKETB
+/def -i -b"^[f"   = /DOKEY SOCKETF
+/def -i -b"^D"    = /DOKEY DCH
+/def -i -b"^L"    = /DOKEY REDRAW
+/def -i -b"^[[A"  = /DOKEY UP
+/def -i -b"^[[B"  = /DOKEY DOWN
+/def -i -b"^[[C"  = /DOKEY RIGHT
+/def -i -b"^[[D"  = /DOKEY LEFT
+/def -i -b"^A"    = /DOKEY HOME
+/def -i -b"^E"    = /DOKEY END
+/def -i -b"^B"    = /DOKEY WLEFT
+/def -i -b"^F"    = /DOKEY WRIGHT
+/def -i -b"^K"    = /DOKEY DEOL
+/def -i -b"^[v"   = /DOKEY INSERT
+/def -i -b"^I"    = /DOKEY PAGE
+/def -i -b"^[h"   = /DOKEY HPAGE
+/def -i -b"^[l"   = /DOKEY LINE
+/def -i -b"^[j"   = /DOKEY FLUSH
+
+;;; default filenames
+
+/def -i MACROFILE	= ~/tiny.macros
+/def -i HILITEFILE	= ~/tiny.hilite
+/def -i GAGFILE		= ~/tiny.gag
+/def -i TRIGFILE	= ~/tiny.trig
+/def -i BINDFILE	= ~/tiny.bind
+/def -i HOOKFILE	= ~/tiny.hook
+/def -i WORLDFILE	= ~/tiny.world
+/def -i LOGFILE		= ~/tiny.log
+
+;;; list macros
+
+/def -i listdef		= /list %*
+/def -i listhilite	= /list -h- -b- -t"%*" -aurfdhb
+/def -i listgag		= /list -h- -b- -t"%*" -ag
+/def -i listtrig	= /list -h- -b- -t"%*" -an
+/def -i listbind	= /list -h- -b"%*"
+/def -i listhook	= /list -h"%*"
+
+;;; purge macros
+
+/def -i purgedef	= /purge -h- -b- %{1-?*}
+/def -i purgehilite	= /purge -h- -b- -t"%*" -aurfdhb
+/def -i purgegag	= /purge -h- -b- -t"%*" -ag
+/def -i purgetrig	= /purge -h- -b- -t"%*" -an
+/def -i purgedeft	= /purge -h- -b- -t"%*" ?*
+/def -i purgebind	= /purge -h- -b"%*"
+/def -i purgehook	= /purge -h"%*"
+
+
+;;; Set up load* and save* macros with default filenames.
+
+;; Can't use %%{1-$%3FILE$} because '/'s in filename will be interpreted at
+;; intermediate level.  (We really need quoted arguments).  Used %%L to get
+;; around this.
+
+/def -i _def_file_command = \
+    /def -i %1%2 = \
+        //def -i _do_file_command = \
+            ///%1 %%%L %{-3}%%;\
+        //_do_file_command $$%3FILE$$ %%1%%;\
+        //undef _do_file_command
+
+/_def_file_command  load  def     MACRO
+/_def_file_command  load  hilite  HILITE
+/_def_file_command  load  gag     GAG
+/_def_file_command  load  trig    TRIG
+/_def_file_command  load  bind    BIND
+/_def_file_command  load  hook    HOOK
+/_def_file_command  load  world   WORLD
+
+/_def_file_command  save  def     MACRO   -h- -b- -t- ?*
+/_def_file_command  save  hilite  HILITE  -h- -b- -t -aurfdhb
+/_def_file_command  save  gag     GAG     -h- -b- -t -ag
+/_def_file_command  save  trig    TRIG    -h- -b- -t -an
+/_def_file_command  save  bind    BIND    -h- -b
+/_def_file_command  save  hook    HOOK    -h
+
+
+;;; /keys simulation
+;; For backward compatibilty only.
+;; Supports '/keys <mnem> = <key>' and '/keys' syntax.
+;; Trigger kluge needed to check syntax.
+
+/def -i keys =\
+;   error message for unsupported '/keys [<mnem> =] <key>,<key>[,<key>...]'
+    /def -i1 -t"keys: *,*" -p2147483646 _keys_comma =\
+        //echo %%% The ///keys comma syntax is no longer supported.%%;\
+        //echo %%% See ///help bind, ///help dokey.%;\
+;   error message for unsupported '/keys <mnem>=<key>'
+    /def -i1 -t"keys: *=*" -p2147483644 _keys_space =\
+        //echo %%% ///keys is a macro.  '=' must be surrounded by spaces.%%;\
+        //echo %%% See ///help bind, ///help dokey.%;\
+;   error message for bad syntax
+    /def -i1 -t"keys: *" -p214783643 _keys_error =\
+        //echo %%% Bad ///keys syntax.%;\
+;   list /dokey bindings for '/keys'
+    /def -i1 -t"keys:" -p2147483647 _keys_list =\
+        //list -Ib%;\
+;   define a dokey binding for '/keys <mnem> = <key>'
+    /def -i1 -t"keys: {*} = ?*" -p2147483645 _keys_def =\
+        //def -ib"%{-2}" = ///dokey %1%;\
+    /trigger keys: %*%;\
+    /purge -I _keys_*
+
+
+;;; Default login format
+;; With /login on, sends TinyMUD-style connect command upon connection.
+
+/def -i -h"LOGIN" = connect %2 %3
+
+
+;;; Retry connections
+
+;; /retry <world> [<delay>]
+;; Try to connect to <world>.  Repeat every two minutes until successful.
+
+/def -i retry = \
+    /def -h"CONFAIL %1 *" _retry_fail_%1 = \
+        //repeat -120 1 ///world %1%;\
+    /def -1 -h"CONNECT %1" _retry_succ_%1 = \
+        //undef _retry_fail_%1%;\
+    /world %1
+
+;; /retry_off [<world>]
+;; Cancels "/retry <world>" (default: all worlds)
+
+/def -i retry_off = /purge {_retry_fail_%{1-*}|_retry_succ_%{1-*}}
+
+
+;;; Hilites for pages and whispers
+;; Simulates "/hilite page" and "/hilite whisper" in earlier versions
+
+/def -i hilite_whisper = \
+  /def -i -p2 -ah -t"{*} whispers, \"*\"" hilite_whisper1%;\
+  /def -i -p2 -ah -t"{*} whispers \"*\"" hilite_whisper2
+
+/def -i hilite_page = \
+  /def -i -p2 -ah -t"{*} pages from *: *" hilite_page1%;\
+  /def -i -p2 -ah -t"You sense that {*} is looking for you in *" hilite_page2%;\
+  /def -i -p2 -ah -t"The message was: *" hilite_page3%;\
+  /def -i -p2 -ah -t"{*} pages: *" hilite_page4
+
+/def -i nohilite_whisper =	/purge -I hilite_whisper[1-2]
+/def -i nohilite_page =		/purge -I hilite_page[1-4]
+
+
+;;; backward compatible macros
+
+/def -i nolog		= /log   off
+/def -i nologin		= /login off
+/def -i noquiet		= /quiet off
+/def -i nowrap		= /wrap  off
+
+/def -i reply		= /borg %*
+/def -i act		= /trig %*

@@ -1,0 +1,207 @@
+# TinyFugue Makefile
+
+FLAGS = -g -DTERMCAP -DMAILDELAY=60 -D_STRSTR
+# CONNECT = -DCONNECT_BSD
+
+### If your version of Make does not import the environment, define HOME here.
+# HOME=
+
+### Single-user default file locations and settings
+
+EXE       = $(HOME)/tf
+TFCONNECT = $(HOME)/.tf.connect
+TFLIBRARY = $(HOME)/.tf.library
+HELPFILE  = $(HOME)/.tf.help
+
+## If you plan to let others use your copy of tf, use the umask 22 line.
+# UMASK   = umask 22;
+UMASK     =
+
+# The next 2 macros may be left blank, if you don't want the man page.
+# MANTYPE is either "nroff" or "cat" (vt100).
+MANTYPE   = nroff
+MANPAGE   = $(HOME)/tf.1
+
+
+### Preferred settings for public installation
+
+# EXE       = /usr/local/bin/tf
+# TFCONNECT = /usr/local/bin/tf.connect
+# TFLIBRARY = /usr/local/lib/tf.library
+# HELPFILE  = /usr/local/lib/tf.help
+# UMASK     = umask 22;
+# # The next 2 macros may be left blank, if you don't want the man page.
+# # MANTYPE is either "nroff" or "cat" (vt100).
+# MANTYPE   = nroff
+# MANPAGE   = /usr/local/man/man1/tf.1
+
+
+### traditional C
+CC = cc
+CCFLAGS =
+
+### GNU C
+# CC = gcc
+# GCCFLAGS = -ansi
+
+LIBRARIES = -ltermcap
+MAKE = make
+
+#################################################################
+#### You should not need to modify anything below this point ####
+#################################################################
+
+FILES      = -DTFLIBRARY=\"$(TFLIBRARY)\" -DTFCONNECT=\"$(TFCONNECT)\"
+CFLAGS     = $(FLAGS) $(GCCFLAGS) $(CCFLAGS) $(FILES) $(CONNECT)
+SHELL      = /bin/sh
+MAKEFILE   = Makefile
+SOURCE     = main.c world.c util.c socket.c keyboard.c macro.c \
+             command1.c command2.c special.c history.c process.c output.c \
+             expand.c dstring.c help.c signal.c
+OBJECTS    = main.o world.o util.o socket.o keyboard.o macro.o \
+             command1.o command2.o special.o history.o process.o output.o \
+             expand.o dstring.o help.o signal.o
+CONSOURCE  = tf.connect.c
+
+
+all:
+	@echo 'Please read the INSTALLATION file before compiling.'
+
+tf:     $(OBJECTS)
+	$(UMASK) $(CC) $(CFLAGS) -o tf $(OBJECTS) $(LIBRARIES)
+
+install: $(EXE) $(TFCONNECT) $(TFLIBRARY) HELP $(MANPAGE)
+	@echo
+	@echo '**** TinyFugue installation complete.'
+
+uninstall:
+	rm -f $(EXE) $(TFCONNECT) $(TFLIBRARY) $(MANPAGE)
+	rm -f $(HELPFILE) $(HELPFILE).index
+
+EXE $(EXE): tf
+	@echo '**** installing TF executable in $(EXE)'
+	$(UMASK) cp tf $(EXE)
+
+tf.connect: tf.connect.c tf.connect.h opensock.c prototype.h $(MAKEFILE)
+	@if [ "$(CONNECT)" ]; then \
+	    echo '**** compiling Connector';\
+	fi
+	if [ "$(CONNECT)" ]; then \
+	    $(UMASK) $(CC) $(CFLAGS) -o tf.connect tf.connect.c $(LIBRARIES);\
+	fi
+
+TFCONNECT $(TFCONNECT): tf.connect
+	@if [ "$(CONNECT)" ]; then \
+	    echo '**** installing Connector in $(TFCONNECT)';\
+	fi
+	if [ "$(CONNECT)" ]; then \
+	    $(UMASK) cp tf.connect $(TFCONNECT);\
+	fi
+
+TFLIBRARY $(TFLIBRARY): $(MAKEFILE) tf.library
+	@echo '**** installing macro library in $(TFLIBRARY)'
+	rm -f $(TFLIBRARY)
+	$(UMASK) sed '/__HELPFILE__/s;;$(HELPFILE);g' <tf.library> $(TFLIBRARY)
+	chmod ugo-w $(TFLIBRARY)
+
+MANPAGE $(MANPAGE): $(MAKEFILE) tf.1.$(MANTYPE)man
+	@if [ "$(MANPAGE)" ]; then \
+	    echo '**** installing manpage in $(MANPAGE) ($(MANTYPE) format)';\
+	fi
+	if [ "$(MANPAGE)" ]; then \
+	    $(UMASK) cp tf.1.$(MANTYPE)man $(MANPAGE);\
+	fi
+
+HELP: $(HELPFILE) $(HELPFILE).index
+
+$(HELPFILE).index: $(HELPFILE) tf.help.index
+	@if [ "$(HELPFILE)" ]; then\
+	    echo '**** installing help index in $(HELPFILE).index';\
+	fi
+	if [ "$(HELPFILE)" ]; then\
+	    $(UMASK) cp tf.help.index $(HELPFILE).index;\
+	fi
+
+tf.help.index: tf.help
+	$(MAKE) makehelp
+	$(UMASK) ./makehelp
+
+$(HELPFILE): $(MAKEFILE) tf.help
+	@if [ "$(HELPFILE)" ]; then\
+	    echo '**** installing help file in $(HELPFILE)';\
+	fi
+	if [ "$(HELPFILE)" ]; then\
+	    $(UMASK) cp tf.help $(HELPFILE);\
+	fi
+
+makehelp: makehelp.c $(MAKEFILE)
+	@echo '**** compiling index builder'
+	$(CC) $(CFLAGS) -o makehelp makehelp.c
+
+$(MAKEFILE):
+
+clean:
+	rm -f $(OBJECTS) makehelp
+
+
+command1.o: command1.c tf.h dstring.h util.h history.h world.h socket.h \
+            output.h macro.h help.h process.h keyboard.h \
+            prototype.h $(MAKEFILE)
+
+command2.o: command2.c tf.h dstring.h util.h macro.h keyboard.h output.h \
+            command1.h history.h world.h socket.h \
+            prototype.h $(MAKEFILE)
+
+dstring.o: dstring.c tf.h dstring.h util.h \
+            prototype.h $(MAKEFILE)
+
+expand.o: expand.c tf.h dstring.h util.h macro.h socket.h command1.h output.h \
+            prototype.h $(MAKEFILE)
+
+help.o: help.c tf.h dstring.h util.h output.h \
+            prototype.h $(MAKEFILE)
+
+history.o: history.c tf.h dstring.h util.h history.h world.h socket.h macro.h \
+           output.h \
+            prototype.h $(MAKEFILE)
+
+keyboard.o: keyboard.c tf.h dstring.h util.h macro.h output.h history.h \
+           socket.h expand.h \
+            prototype.h $(MAKEFILE)
+
+macro.o: macro.c tf.h dstring.h util.h history.h world.h socket.h macro.h \
+           keyboard.h output.h expand.h command1.h \
+            prototype.h $(MAKEFILE)
+
+main.o: main.c tf.h dstring.h util.h history.h world.h socket.h macro.h \
+           output.h signal.h keyboard.h command1.h command2.h \
+            prototype.h $(MAKEFILE)
+
+output.o: output.c tf.h dstring.h util.h history.h world.h socket.h macro.h \
+           output.h \
+            prototype.h $(MAKEFILE)
+
+process.o: process.c tf.h dstring.h util.h history.h world.h socket.h macro.h \
+           expand.h output.h \
+            prototype.h $(MAKEFILE)
+
+signal.o: signal.c tf.h dstring.h util.h history.h world.h process.h socket.h \
+           keyboard.h output.h \
+            prototype.h $(MAKEFILE)
+
+socket.o: socket.c tf.h dstring.h util.h history.h world.h socket.h output.h \
+           process.h macro.h keyboard.h command1.h command2.h special.h \
+           signal.h tf.connect.h opensock.c \
+            prototype.h $(MAKEFILE)
+
+special.o: special.c tf.h dstring.h util.h history.h world.h socket.h macro.h \
+           output.h \
+            prototype.h $(MAKEFILE)
+
+util.o: util.c tf.h dstring.h util.h output.h macro.h socket.h keyboard.h \
+            prototype.h $(MAKEFILE)
+
+world.o: world.c tf.h dstring.h util.h history.h world.h output.h macro.h \
+           process.h \
+            prototype.h $(MAKEFILE)
+

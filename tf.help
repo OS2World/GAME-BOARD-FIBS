@@ -1,0 +1,2410 @@
+@@@@summary
+
+Help is available on the following topics:
+
+ +index        +macros        history       processes
+  general       triggers      flags        +sockets
+  tinyfugue     patterns      variables    +hooks
+  worlds        attributes   +environment  +expansion
+ *startup      *library
+
+Type "/help index" for a complete list of TF builtin commands.
+Type "/help help" for instructions on using this help system.
+Type "/help general" for some general information on using TF.
+
+If you are having problems with TF and wish to contact the author, type
+"/help tinyfugue".
+
+If you are having trouble reading the help sections because text is 
+scrolling off the screen, try typing "/more on" before /help commands.
+
+@@@@addworld
+
+  Format:
+
+  /ADDWORLD <name> [<character> <pass>] <host> <port> [<macro file>]
+  /ADDWORLD default <character> <pass> [<mfile>]
+  ___________
+
+  Adds a new world associated with the name <name>, or defines the
+  default character and password.  Those worlds without character
+  names, passwords, or macro files will reference to those fields in
+  the default world if a default world exists and contains those
+  strings.
+
+  Redefining the default world is permitted.  Those worlds previously
+  defined without character, password or macro file strings will then
+  use the new default.
+
+  See: worlds
+
+@@@@background
+
+  Format:
+
+  /BACKGROUND [OFF|ON]
+  ___________
+
+  Sets the flag "background".  If this flag is on, text received from
+  all worlds will be tested for matching triggers and recorded in
+  history.  If is is off, only text from the current socket will be
+  triggered and recorded.
+
+  If there is unread socket input queued up when background is turned
+  on, it will all be tested for triggers and recorded at that time.
+
+  See: triggers, flags, history
+
+@@@@bamf
+
+  Format:
+
+  /BAMF [OFF|ON|OLD]
+  ___________
+
+  Sets the flag "bamf".  This flag controls whether portals will
+  operate.  A portal is text sent by a server of the form:
+
+  #### Please reconnect to <name>@<IP addr> (<hostname>) port <port> ####
+ 
+  For example:
+ 
+  #### Please reconnect to Islandia@128.100.102.51 (hawkwind.utcs.toronto.edu)
+    port 2323 ####
+
+  If "bamf" is off, lines in this format have no effect.  If "bamf" is
+  on, fugue will attempt to use the portal as an UnterMUD portal:  it
+  will disconnect from the current world, and use the same name and
+  password to attempt to connect to the new world (if the login flag is
+  on).  If bamf is "old", fugue will connect to the new world without
+  disconnecting from the current world.  If "login" is on and the new
+  world has been defined with a name and password in an /addworld
+  command, fugue will attempt to log in automatically.
+
+  The flag "bamf" defaults to OFF.
+
+  See: worlds, sockets, flags
+
+@@@@beep
+
+  Format:
+
+  /BEEP [<number>|ON|OFF]
+  ___________
+
+  /beep causes Fugue to emit <number> beeps (ASCII 7).  /beep with no
+  arguments will emit three beeps.  /beep OFF causes Fugue to ignore
+  further calls to /beep until a /beep ON is performed.
+
+@@@@bind
+
+  Format:
+
+  /BIND [<sequence> = <command>]
+  ___________
+
+  Binds a key sequence to a macro.  The <sequence> may use ^<key>
+  notation for a control key, and \<number> for a decimal character
+  code.  For example, the escape character can be given by ^[ or \27.
+
+  When the key sequence <sequence> is typed at the keyboard, <command>
+  is executed.  The command is actually a macro body, so all the
+  substitutions described under "expansion" will be performed.
+
+  At startup, TF defines bindings for BSPC, BWORD, DLINE, and REFRESH
+  keys based on your terminal settings (defined by stty).  Also, the
+  standard macro library defines a set of (invisible) default bindings,
+  one for each of the /dokey functions.
+
+  The command
+    /bind <sequence> = <command>
+  is equivilent to
+    /def -b"<sequence>" = <command>.
+
+  Examples:
+
+  /bind ^X1 = :jumps to the left%;:steps to the right!
+  /bind ^[q = /more off
+  /bind ~ky = /input Kyosuke
+
+  See: general, UNBIND, DOKEY, INPUT
+
+@@@@board
+
+  Format:
+
+  /BOARD [OFF|ON|1|2|4]
+  ___________
+
+  Sets the flag "board". This flag controls whether an additional window
+  for displaying backgammon boards will be used. This is useful when
+  connecting to the FIBS backgammon server. To display backgammon boards
+  in this window you have to tell the server to send boards in rawboard
+  format. Use the help command of the FIBS backgammon server to find out
+  how this is done.
+  
+  A numeric argument selects the boardstyle used to display the board.
+  The default boardstyle is 4, which uses the smallest board window.
+
+  The flag "board" defaults to OFF.
+
+  See: flags
+
+@@@@borg
+
+  Format:
+
+  /BORG [OFF|ON]
+  ___________
+
+  Sets the flag "borg".  This flag controls whether trigger bodies will
+  be executed.  This flag does not control whether trigger attributes
+  (gag, underline, reverse, flash, dim, hilite, bell) will work; the
+  separate flags "gag" and "hilite" control those.
+
+  The flag "borg" defaults to OFF.
+
+  See: triggers, flags
+
+@@@@cat
+
+  Format:
+
+  /CAT [%]
+  ___________
+
+  Concatenates all following lines until a line containing a single
+  "." is reached.  If the argument "%" is given, a "%\" sequence is
+  appended to each line.
+
+  Intermediate lines in the concatenation cannot be recalled with /dokey
+  RECALLB (although the line containing the /cat call can be) and the
+  entire line will be added to the command history buffer as a whole.
+
+  Example:
+
+  /cat %
+  :foo
+  :bar
+  :baz
+  .
+
+  This produces:
+  :foo%\:bar%\:baz
+
+  If the "sub" flag is set on, this will expand to three lines ":foo",
+  ":bar" and ":baz" and be sent to the socket.
+
+  See also: general, history, SUB
+
+@@@@cleardone
+
+  Format:
+
+  /CLEARDONE [OFF|ON]
+  ___________
+
+  Sets the flag "cleardone".  This flag controls whether Fugue will
+  clear the input window when return is pressed; otherwise, it will
+  drop to the next line in the input window, scrolling or clearing the
+  window (see the "clearfull" flag) if necessary.
+
+  The flag "cleardone" applies only to visual mode.
+  The flag "cleardone" defaults to OFF.
+
+  See: general, flags, CLEARFULL
+
+@@@@clearfull
+
+  Format:
+
+  /CLEARFULL [OFF|ON]
+  ___________
+
+  Sets the flag "clearfull".  This flag controls whether Fugue will
+  clear the input window upon reaching the bottom instead of scrolling
+  it. Fugue will always clear the input window if your terminal does
+  not have the capability to set the scroll area.
+
+  The flag "clearfull" applies only to visual mode.
+  The flag "clearfull" applies only to terminals with the ability to
+   set the scroll area.
+  The flag "clearfull" defaults to OFF.
+
+  See: general, flags
+
+@@@@dc
+
+  Format:
+
+  /DC [<world>|-ALL]
+  ___________
+
+  Disconnects from the named world, or the current world if no world is
+  given, or all worlds if "-all" is given.  If the flag "quitdone" is
+  on, and /dc would cause TF to be unconnected to any socket, this will
+  also cause TF to exit.
+
+  See: sockets, QUITDONE
+
+@@@@def
+
+  Format:
+
+  /DEF [-n<shots>] [-p<pri>] [-c<chance>] [-t<pattern>] [-w<world>]
+       [-h"<event> [<pattern>]"] [-b<bind>] [-a[ngGurfdhb]] [-iI]
+       [<name>] [= <body>]
+  ___________
+
+  Defines a macro with an optional trigger and hook associated with
+  it.  The meanings of the options are:
+
+    -n<shots>     The macro is a multi-shot, that is, it will be deleted
+                  after it is triggered or hooked <shots> times.  A value
+                  of 0 makes the macro permanent.  Default: 0.
+
+    -p<pri>       Sets the priority of the macro's trigger or hook
+                  to <pri>.  Default: 1.
+
+    -c<chance>    Sets the percent probability of a trigger execution.
+                  Default: 100%.
+
+    -t<pattern>   Defines a trigger pattern which will cause the macro
+                  to be called.  <pattern> may be enclosed in double
+                  quotes ("); if so, quotes within the pattern must be
+                  escaped with a '\'.  Default: no trigger.
+
+    -w<world>     If the macro has a <trigger>, it can only be matched
+                  by text from <world>.  Default: any world.
+
+    -h"<event> [<pattern>]"
+                  Specifies that the macro will be called automatically
+                  whenever <event> occurs and it's arguments match
+                  <pattern>.  <event> may be a single event name or a
+                  list separated by '|'.  If <pattern> is omitted, it
+                  will default to "*", and the '"' may also be
+                  omitted.  Default: no hook.
+
+    -b<bind>      The macro will be called when the sequence <bind>
+                  is entered at the keyboard.  Default: no binding.
+
+    -a[ngGurfdhb] Set attribute(s) (normal, gag, norecord, underline,
+                  reverse, flash, dim, hilite, bell) used to display
+                  text matched by the trigger or to display the default
+                  message of a hook.  Default: normal.
+
+    -i            Marks the macro as "invisible".  Invisible macros
+    -I            are not processed by /list, /save, or /purge unless
+                  forced.  Default: not invisible.
+
+    -1            Defines a one-shot.  Equivalent to "-n1".
+
+    <name>        The name of the macro.  Default: no name.  Names
+                  should begin with a letter, and contain letters,
+                  numbers, or '_' characters.  This is not enforced,
+                  but other characters (especially '$', '/', and '%')
+                  may cause unwanted interpretations during expansion.
+
+    = <body>      Text to be executed when macro is called.  Default:
+                  no body.
+
+
+  Example:
+
+  /def -p2 -c75 -t"* has arrived." -ah greet = :greets %1
+
+  This will create a macro that executes ":greets %1" from the command
+  line, and associates with it a trigger of priority 2 and probability
+  75% that goes off upon reception of text matching the pattern "* has
+  arrived." from the socket, and displays the text hilited.
+
+  /def is sufficient to perform all the functions of the /trig, /trigp,
+  /trigc, /trigpc, /gag, /hilite, /hook, and /bind commands.
+
+  See: macros, triggers, patterns, hooks, expansion, attributes, UNDEF,
+       UNDEFN, UNDEFT, UNTRIG, UNHOOK, BIND, PURGE, LIST, SAVE, LOAD
+
+@@@@dokey
+
+  Format:
+
+  /DOKEY <mnemonic>
+  ___________
+
+  Executes the function of the edit key <mnemonic>.  Most of the edit
+  key functions are not meaningful when the /dokey command is executed
+  from the regular command line (some, such as RECALLB, RECALLF,
+  SOCKETB, SOCKETF and INSERT, are), but these are useful in
+  conjunction with the /bind command for creating multiple key
+  sequences for the same function.
+
+  Default sequence        Mnemonic        Function
+  ___________________________________________________________________
+  (shell setting)         BSPC            Backspace
+  (shell setting)         BWORD           Delete word previous
+  (shell setting)         DLINE           Delete line
+  (shell setting)         REFRESH         Refresh line
+  ^P                      RECALLB         Recall previous line
+  ^N                      RECALLF         Recall next line
+  ^[b                     SOCKETB         Previous socket
+  ^[f                     SOCKETF         Next socket
+  ^D                      DCH             Delete character
+  ^L                      REDRAW          Redraw screen
+  ^[[a                    UP              Cursor up
+  ^[[b                    DOWN            Cursor down
+  ^[[c                    RIGHT           Cursor right
+  ^[[d                    LEFT            Cursor left
+  ^A                      HOME            Beginning of line
+  ^E                      END             End of line
+  ^B                      WLEFT           Move left word
+  ^F                      WRIGHT          Move right word
+  ^K                      DEOL            Delete to end of line
+  ^[v                     INSERT          Toggle insert mode
+  ^I                      PAGE            Scroll 1 page (/more)
+  ^[h                     HPAGE           Scroll half page (/more)
+  ^[l                     LINE            Scroll 1 line (/more)
+  ^[j                     FLUSH           Jump to end of /more buffer
+
+  The default sequences for BSPC, BWORD, DLINE, and REFRESH are those
+  used by your shell. 
+
+  Warning:  TF will become essensially useless if there is no key bound
+  to /dokey NEWLINE.
+
+  Example:
+
+  /bind ^? = /dokey BSPC
+  /bind ^H = /dokey BSPC
+
+  Both ^H and DEL could then be used to do backspacing.
+
+  See: general, sockets, history, BIND, DOKEY, MORE
+
+@@@@echo
+
+  Format:
+
+  /ECHO [-a[ngGurfdhb]] [-w<world>] <text>
+  ___________
+
+  Locally echoes <text> to the screen or output window.  Attributes may
+  be given with the -a flag.  If -w<world> is given, the text will be
+  stored in the history of <world>; if it is not the current world,
+  <text> will not be displayed until <world> is made current.
+
+  See: attributes, worlds
+
+@@@@edit
+
+  Format:
+
+  /EDIT [-n<shots>] [-p<priority>] [-c<chance>] [-t<pattern>] [-w<world>]
+       [-h<hook>] [-a[ngGurfdhb]] [-iI] [<name>] [= <body>]
+  ___________
+
+  Edits a currently existing macro or the trigger associated with a
+  macro.  The name of the macro must be specified and cannot be
+  changed, with the following two exceptions:
+
+  1. The macro name can be specified as "#<num>" where <num> is the
+  number of the macro instead of the name.  A macro number can be
+  determined by listing the macro with /list.
+
+  2. The macro name can be specified as "$<pattern>" where <pattern>
+  is the trigger pattern.  You may still change the pattern if this is
+  used to locate the macro.
+
+  In either case, the name cannot be changed.  It is possible to
+  create a macro which changes the name of a macro, if it does not
+  have any options other than a name and a body:
+
+        /def rename = /def %2 = $%1%;/undef %1
+
+  How this works is discussed in the help section "expansion".
+
+  All unspecified arguments remain as they were before, with the exception
+  of -i, which will be cleared if it is not specified.
+
+
+  Example:
+
+  /def -p2 -c75 -t"* has arrived." -ah greet = :greets %1
+  /edit -c0 greet
+
+  The second command will modify the probability of the trigger
+  associated with the macro "greet" to 0%, effectively turning it off.
+
+  See: macros, triggers, patterns, expansion, attributes, DEF, LIST
+
+@@@@gag
+
+  Format:
+
+  /GAG [<pattern> [=<response>]]
+  ___________
+
+  Sets up a trigger associated with an unnamed macro.  The trigger
+  will have the attribute gag, be triggered by <pattern> and execute
+  <response> if specified.  The probability is 100%.  The priority is
+  determined by the user variable "gpri", set with the /gpri command.
+
+  /gag with no arguments sets the flag "gag" to ON.  The flag "gag"
+  determines whether the gag attribute on triggers will operate. This
+  flag can be set to OFF by "/nogag" with no arguments.
+
+  Gagged lines from background worlds will not set the activity flag
+  on the status line or call the activity hook.
+
+  The flag "gag" defaults to ON.
+  Operation of triggers is described in the section "triggers".
+
+  See: triggers, patterns, expansion, flags, variables, DEF, NOGAG, GPRI
+
+@@@@gpri
+
+  Format:
+
+  /GPRI [<priority>]
+  ___________
+
+  Sets the user variable "gpri".  This variable controls the priority
+  of all subsequently-set gags.  It will not change the priorities of
+  gags already set.
+
+  The variable "gpri" defaults to 0.
+
+  See: variables, triggers, GAG
+
+@@@@grab
+
+  Format:
+
+  /GRAB <text>
+  ___________
+
+  This command puts <text> into the input buffer.  It is not really
+  useful from the normal command line, but is quite useful when called
+  from a macro to redefine macros, or perhaps when bound to a key to
+  speed up part of a line (macros allow you to largely do what this
+  would allow, however).  Any text already in the input buffer is
+  discarded.
+
+  Example:
+
+  /def reedit = /grab //edit %1 = $%1
+
+  How macros like this work is discussed in "expansion".  If you had
+  previously done "/def flail = :flails at his keyboard", the command
+  "/reedit foobar" would place "/edit foobar = :flails at his keyboard"
+  in the input buffer and allow you to edit it using the editing keys.
+
+  See: macros, expansion, general, INPUT
+
+@@@@help
+
+  Format:
+
+  /HELP [<topic>]
+  ___________
+
+  Displays help on the topic specified, or displays a summary of
+  available topics if no topic is given.
+
+  If a HELPFILE macro is defined, it's body will be used as the name of
+  the helpfile; otherwise ~/tf.help will be used.  The helpfile may be
+  compressed; see "library".  If the helpfile or the help index is not
+  found, /help will not function.
+
+  Commands are described with the format "/COMMAND arguments".  Words
+  in all caps must be spelled exactly as shown.  Arguments in <> can be
+  given any value.  Arguments in [] may be omitted.  The character | means
+  "or".  For example, "[OFF|ON]" means you may type "off", "on", or nothing.
+
+  Many commands take options to modify their behavior, following these rules:
+      All options must be preceded by '-'.
+      Options may be grouped after a single '-'.
+      There must be no space between an option and its argument.
+      String option-arguments may be delmited by a space or double quotes.
+        Delimiters within the string must be preceeded by '\'.
+      All options must precede operands.
+      A '-' by itself may be used to mark the end of the options.
+
+@@@@hilite
+
+  Format:
+
+  /HILITE [<pattern> [= <response>]]
+  ___________
+
+  Sets up a trigger associated with an unnamed macro.  The trigger
+  will have the attribute hilite, be triggered by <pattern> and execute
+  <response> if specified.  The probability is 100%. The priority is
+  determined by the user variable "hpri", set with the /hpri command.
+
+  /hilite with no arguments sets the flag "hilite" to ON.  The flag
+  "hilite" determines whether the underline, reverse, flash, dim, and
+  hilite attributes on triggers will operate.  This flag can be set to
+  OFF by "/nohilite" with no arguments.
+
+  The standard library also defines /hilite_page and /hilite_whisper.
+
+  The flag "hilite" defaults to ON.
+
+  See: triggers, patterns, expansion, flags, variables, DEF, NOHILITE, HPRI
+
+@@@@hook
+
+  Format:
+
+  /HOOK <event> [<pattern>] [= <body>]
+  /HOOK [OFF|ON]
+  ___________
+
+  Sets up an unnamed macro with an associated hook.  The macro has
+  normal attribute and executes <body> when the event occurs with the
+  arguments that match <pattern>.  <event> may be a single event or a
+  list of events separated by '|'.  If omitted, <pattern> will default
+  to "*".
+
+  /hook with no arguments displays the state of the "hook" flag.  /hook
+  with an argument of ON or OFF sets the "hook" flag, which determines
+  if hooks will execute their associated macros.
+
+  Note that defining a hook will not replace an existing hook on the
+  same event, even with /redef on.  (This is new in version 2.1).
+
+  See the section "hooks" for details on hook operation, a list of
+  event names, and examples.
+
+  See: hooks, macros, expansion, flags, DEF, UNHOOK
+
+@@@@hpri
+
+  Format:
+
+  /HPRI [<priority>]
+  ___________
+
+  Sets the user variable "hpri".  This variable controls the priority
+  of all subsequently-set hilites.  It will not change the priorities
+  of hilites already set.
+
+  The variable "hpri" defaults to 0.
+
+  See: variables, triggers, HILITE
+
+@@@@input
+
+  Format:
+
+  /INPUT <text>
+  ___________
+
+  Enters <text> into the input buffer as if it had been typed at the
+  keyboard, without deleting the current contents of the input buffer.
+
+  /Input is perhaps most useful in combination with /bind, to create
+  short key sequences that expand to longer text.  For example, if you
+  have this binding:
+
+    /bind ~oj = /input OliverJones
+
+  and then type "page ~oj = Hello" at the keyboard, it will appear in
+  the input window as "page OliverJones = Hello".
+
+  See: BIND, GRAB
+
+@@@@isize
+
+  Format:
+
+  /ISIZE [<size>]
+  ___________
+
+  Sets the user variable "isize".  This variable determines the size
+  of the input window in visual mode.  It may be set before or after
+  visual mode is entered.  If visual mode is on, the screen will be
+  redrawn.
+
+  The variable "isize" applies only to visual mode.
+  The variable "isize" defaults to 3.
+
+  See: flags, variables, general, VISUAL
+
+@@@@kecho
+
+  Format:
+
+  /KECHO [OFF|ON|<prefix>]
+  ___________
+
+  Sets the flag "kecho" and optionally the user variable "kprefix".
+  The flag "kecho" determines whether keyboard text will be locally
+  echoed to the screen before processing.  The user variable "kprefix"
+  controls what this text will be prefixed with.
+
+  The flag "kecho" defaults to OFF.
+  The variable "kprefix" defaults to nothing.
+
+  See: flags, variables, general
+
+@@@@kill
+
+  Format:
+
+  /KILL <pid>
+  ___________
+
+  Terminates a tinyprocess (/quote or /repeat command) denoted by <pid>.
+  The pid of a tinyprocess can be determined with the /ps command or a
+  PROCESS hook.
+
+  The operation of tinyprocesses is described in the section "processes".
+
+  See: processes, QUOTE, REPEAT, PS
+
+@@@@lcd
+
+  Format:
+
+  /LCD [newdir]
+  ___________
+
+  Changes to a new local directory, or displays the current directory.
+  Directory display is not supported on some systems.
+
+@@@@listbind
+@@@@listdef
+@@@@listgag
+@@@@listhilite
+@@@@listhook
+@@@@listtrig
+@@@@list
+
+  Format:
+
+  /LIST [-s] [-n<shots>] [-p<pri>] [-c<chance>] [-t<pattern>] [-w<world>]
+        [-h<hook>] [-b<bind>] [-a[ngGurfdhb]] [-iI] [<name>] [= <body>]
+  ___________
+
+  Lists macros having all the specified options.  If "-s" is specified
+  as the first option, macros will be listed in a short format.  Other
+  options are as in /def except as noted below; see DEF for a full
+  explanation.  Omitted options are "don't care", and will not be used
+  to determine if a macro is listed.  Thus, with no arguments, /list
+  will list all macros.
+
+  The "-t" flag with no <pattern> specifies macros with any trigger.
+  The "-t-" flag specifies macros without triggers.
+
+  The "-h" flag with no <hook> specifies macros with any hook.
+  The "-h-" flag specifies macros without hooks.
+
+  The "-b" flag with no <bind> specifies macros with any binding.
+  The "-b-" flag specifies macros without bindings.
+
+  The "-a" flag can be followed by any combination of 'n', 'g', 'G' 'u',
+  'r', 'f', 'd', 'h', or 'b'.  The default is to display macros with
+  any attributes.
+
+  The "-i" flag will also list invisible macros, normally not listed.
+  The "-I" flag will list ONLY invisible macros.
+
+  A "= <body>" specifies macros whose body match the pattern of <body>.
+  If <body> is empty, macros without a body are selected.
+
+  Example:  /list -n0 -t -aurfdh foo* =
+  will list all macros whose names match "foo*"; have a trigger; are
+  not multi-shots; have any of the underline, reverse, flash, dim, or
+  hilite attributes; and have an empty body.
+
+  See: macros, triggers, patterns, attributes, DEF
+
+@@@@listsockets
+
+  Format:
+
+  /LISTSOCKETS
+  ___________
+
+  Lists the sockets Fugue is currently connected to, and displays the
+  name of the socket Fugue is currently displaying.  For other sockets,
+  it will display the state of the socket as "active" (ungagged text
+  has been received but not yet displayed), "idle" (not active), "dead"
+  (the socket was closed, but there is undisplayed activity), "pending"
+  (a connection to the socket was attempted but has not yet been
+  established), or "defunct" (a pending socket that was closed with
+  /dc but still has a child CONNECT process).
+
+  See: sockets, BACKGROUND, WORLD
+
+@@@@listworlds
+
+  Format:
+
+  /LISTWORLDS [-c] [<pattern>]
+  ___________
+
+  Lists the worlds Fugue knows about, and also displays the current
+  default character name, and if the -c flag is present, the password.
+
+  See: worlds, patterns
+
+@@@@loadbind
+@@@@loaddef
+@@@@loadgag
+@@@@loadhilite
+@@@@loadhook
+@@@@loadtrig
+@@@@load
+
+  Format:
+
+  /LOAD <file>
+  ___________
+
+  Loads commands from <file>.  The file may contain any legal TinyFugue
+  commands, and may be compressed (see "library").  Blank lines and
+  lines beginning with ';' are ignored.  Any leading whitespace on a
+  line is stripped.  Lines ending in '\' will be joined with the next
+  line.  A '%' preceding a '\' eliminates its special meaning.
+
+  The standard macro library also defines the commands /loaddef,
+  /loadbind, /loadhilite, /loadgag, /loadtrig, and /loadhook.
+
+  See: macros, library, DEF, SAVE
+
+@@@@log
+
+  Format:
+
+  /LOG [-w[<world>]] [-lig] [OFF|ON|<file>]
+  ___________
+
+  Enables or disables logging to <file> if specified, otherwise to the
+  file named in the body of the LOGFILE macro.
+
+  Options:
+    -w<world>   Log output from <world> only.
+    -w          Log output from the current foreground world.
+    -l          Log local output (output generated by TF).
+    -i          Log keyboard input.
+    -g          Log global output (all worlds and local TF output).
+
+  If none of the -ligw options are given, -g is assumed.  If more than
+  one is given, only the last one takes effect.
+
+  It is possible to have multiple log files open simultaneously.  It is
+  also possible to have several types of output go to the same log
+  file, by using several /log commands.  For example,
+
+    /log -g
+    /log -wtt tt.log
+    /log -i tt.log
+
+  will send input from the keyboard and output from the world TT to the
+  file "tt.log", and also send all (global) output to the file named by
+  the LOGFILE macro.
+
+  The functions of the /logme command in older versions of TF can be
+  performed with /log -i.
+
+  Logging is disabled by default.
+
+  See: flags
+
+@@@@login
+
+  Format:
+
+  /LOGIN [OFF|ON]
+  ___________
+
+  Sets the flag "login".  This flag determines whether Fugue will call
+  the LOGIN hook upon connecting to a world.
+
+  The standard library defines a default LOGIN hook in TinyMUD format,
+  "connect <name> <password>".  You may define other LOGIN hooks, with
+  higher priority to override the default, to use your own format.  See
+  "hooks" for an example.
+
+  The flag "login" defaults to ON.
+
+  The "login" flag can be suppressed temporarily at startup with the "-l"
+  option, or when manually connecting to a world with "/world -<world>".
+
+  See: worlds, flags, variables, WORLD
+
+@@@@logme
+  Obsolete.  See "log".
+
+@@@@lp
+
+  Format:
+
+  /LP [OFF|ON]
+  ___________
+
+  Sets the flag "lp".  This flag determines whether partial lines from
+  a MUD will be displayed.  This is useful for LP-MUDs.
+
+  The flag "lp" defaults to OFF.
+
+  See "hooks" for some useful LP-MUD examples.
+
+  See: flags, LPQUOTE
+
+@@@@lpquote
+
+  Format:
+
+  /LPQUOTE [OFF|ON]
+  ___________
+
+  Sets the flag "lpquote".  This flag determines whether the /quote
+  and /repeat commands will not operate on a timed basis but instead
+  wait for a '*^H' prompt from the MUD.  This is useful for LP-MUDs.
+
+  The flag "lpquote" defaults to OFF.
+
+  See: flags (lp), QUOTE, REPEAT
+
+@@@@mecho
+
+  Format:
+
+  /MECHO [OFF|ON|<prefix>]
+  ___________
+
+  Sets the flag "mecho" and the user variable "mprefix".  The flag
+  "mecho" determines whether expanded macro text will be echoed to the
+  screen before being sent through the socket.  The variable "mprefix"
+  is the prefix for this text when echoed to the screen.
+
+  Text is prefixed and echoed whenever:
+
+  (1) A complete line of socket text is expanded and sent
+  (2) A command is executed inside a macro
+  (3) A macro body substitution is performed inside a macro
+
+  In the latter two cases, an indication of what command is being
+  executed or what substitution is being made is given.
+
+  The flag "mecho" defaults to OFF.
+  The variable "mprefix" defaults to a null string.
+
+  See: flags, variables, macros, expansion
+
+@@@@more
+
+  Format:
+
+  /MORE [OFF|ON]
+  ___________
+
+  Sets the flag "more".  This flag determines whether the pager will
+  work in TinyFugue.  The pager will prompt you with "--More--" when a
+  screenful of text is received from the MUD between input lines.
+  Output will be suspended, but TF will continue to process incoming
+  text and triggers, run processes, and allow you to continue typing.
+  Typing TAB (^I) at the prompt will scroll a full screen of text;
+  [ESC]h will scroll one-half screen; [ESC]l will scroll one line; and
+  [ESC]j will jump to the end of the buffer (text will still be stored
+  in history, however, so you can /recall it).  The pager keys may be
+  rebound using /bind.
+
+  The flag "more" defaults to OFF.
+
+  See: flags, general
+
+@@@@nogag
+
+  Format:
+
+  /NOGAG [<pattern>]
+  ___________
+
+  Eliminates a macro that is triggered by <pattern> and has the gag
+  attribute.  /nogag with no arguments turns off the flag "gag",
+  disabling all gag attributes.
+
+  The flag "gag" defaults to ON.
+
+  See: flags, triggers, GAG
+
+@@@@nohilite
+
+  Format:
+
+  /NOHILITE [<pattern>]
+  ___________
+
+  Eliminates a macro that is triggered by <pattern> and has the hilite
+  attribute.  /nohilite with no arguments turns off the flag "hilite",
+  disabling all hilite attributes.
+
+  The flag "hilite" defaults to ON.
+
+  See: flags, triggers, HILITE
+
+@@@@ps
+
+  Format:
+
+  /PS
+  ___________
+
+  Displays currently-running processes and their pids.
+
+  See: processes
+
+@@@@ptime
+
+  Format:
+
+  /PTIME [<time>]
+  ___________
+
+  Sets the user variable "ptime".  This variable determines the number
+  of seconds to wait before sending /quote and /repeat text.
+
+  The variable "ptime" defaults to 1.
+
+  See: variables, processes
+
+@@@@purgebind
+@@@@purgedef
+@@@@purgedeft
+@@@@purgegag
+@@@@purgehilite
+@@@@purgehook
+@@@@purgetrig
+@@@@purge
+
+  Format:
+
+  /PURGE [-n<shots>] [-p<pri>] [-c<chance>] [-t<pattern>] [-w<world>]
+       [-b<bind>] [-h<hook>] [-a[ngGurfdhb]] [-iI] [<name>] [= <body>]
+  ___________
+
+  Removes all specified macros.  The macro is specified in the same way
+  as in the /list command; see LIST for details.  Invisible macros will
+  not be purged unless "-i" is specified.
+
+  The standard macro library also defines the commands /purgedef,
+  /purgebind, /purgehilite, /purgegag, /purgetrig, /purgdeft, and
+  /purgehook.
+
+  See: macros, triggers, patterns, attributes, library, DEF, LIST
+
+@@@@purgeworld
+
+  Format:
+
+  /PURGEWORLD <pattern>
+  ___________
+
+  Purges all world entries matching <pattern>.
+
+  See: worlds, patterns
+
+@@@@qecho
+
+  Format:
+
+  /QECHO [OFF|ON|<prefix>]
+  ___________
+
+  Sets the flag "qecho" and the user variable "qprefix".  The flag
+  "qecho" determines whether quoted lines will be echoed to the screen
+  before being sent through the socket.  The variable "qprefix" is the
+  prefix for this text when echoed to the screen.
+
+  The flag "qecho" defaults to OFF.
+  The variable "qprefix" defaults to a null string.
+
+  See: flags, variables, processes, QUOTE
+
+@@@@quiet
+
+  Format:
+
+  /QUIET [OFF|ON]
+  ___________
+
+  Sets the flag "quiet".  This flag determines whether TinyFugue will
+  suppress the output from a MUD that occurs when you connect to it.
+  Fugue will stop suppressing text after 25 lines or when it finds a
+  line describing the WHO action which often signifies the end of MUD
+  introduction text.
+
+  The /quiet command does not function correctly on many MUDs which
+  don't have the expected line in the introductory text.
+
+  The flag "quiet" defaults to OFF.
+
+  See: flags
+
+@@@@quit
+
+  Format:
+
+  /QUIT
+  ___________
+
+  Exits from Fugue.
+
+@@@@quitdone
+
+  Format:
+
+  /QUITDONE [OFF|ON]
+  ___________
+
+  Sets the flag "quitdone".  This flag determines whether Fugue will
+  exit when disconnected from the last socket it is connected to.
+
+  The flag "quitdone" defaults to OFF.
+
+  See: flags
+
+@@@@quote
+
+  Format:
+
+  /QUOTE [-w[<world>] [-<time>] [<prefix>] '"<file>"[<suffix>]
+  /QUOTE [-w[<world>] [-<time>] [<prefix>] !"<shell command>"[<suffix>]
+  /QUOTE [-w[<world>] [-<time>] [<prefix>] #"<history command>"[<suffix>]
+  /QUOTE [-w[<world>] [-<time>] [<prefix>] `"<TF command>"[<suffix>]
+  ___________
+
+  Quotes a file, shell command, history, or TF command.  This will be
+  done at a rate described in the section "processes".  Each line will
+  be preceded by <prefix> and followed by <suffix> if given.
+
+  If <time> is specified, it is used as the value in seconds for the
+  delay between each line.  Otherwise, the user variable "ptime" is
+  used.
+
+  Socket commands generated by /quote will be send to the foreground
+  world by default.  If -w<world> is given, commands will be sent to
+  that world instead .  If -w is given, commands will be sent to the
+  world that was current when the /repeat was started.
+
+  A single quote (') signifies that a file is to be quoted.
+
+  A bang (!) signifies that a shell command is to be executed and the
+  output (standard output and standard error) quoted.
+
+  A pound sign (#) signifies that a /recall command is to be executed
+  and the output quoted (see "recall" for the exact syntax).
+
+  A backquote (`) signifies that a TF command is to be executed and the
+  output quoted.
+
+  If <prefix> and/or <suffix> are specified, they are prepended and
+  appended to each line generated by the /quote.  If <suffix> is
+  omitted, the double quotes around the <file> or <command> may be
+  omitted.
+
+  Quotes are done by means of a tinyprocess; i.e. they run concurrently
+  with normal input and output.
+
+  Quoted text never has newline or in-line macro substitution done
+  (/repeat'ed text does, however).
+
+  ___________
+
+  Examples:
+
+  (1) /quote -1 :reads about '"/usr/dict/words" in the dictionary.
+
+  This sends off lines like:
+       :reads about aardvark in the dictionary.
+       :reads about aardvore in the dictionary.
+  with one-second delays between lines.
+
+  (2) /quote -0 /echo !ps -gux
+
+  This displays the output of the system command "ps -gux" by echoing
+  it locally, with no delays.
+
+  (3) /quote -0 :remembers this: #-wTT 212-212
+
+  This sends off this one line immediately:
+
+       :remembers this: [The text of line #212 in world TT's recall buffer]
+
+  (4) /quote :is using `/version
+
+  will tell everybody in the room what version of TF you're running.
+
+  ___________
+
+  See: processes, history, LPQUOTE, PTIME, RECALL
+
+@@@@recall
+
+  Format:
+
+  /RECALL [-w<world>] [-lig] [-a[ngurfdhb]] [#]<range> [<pattern>]
+  ___________
+
+  Recalls lines from a history buffer.  If none of the -w, -l, -i, or
+  -g options are given, the recall is from the current world's history;
+  -w<world> recalls from the history of <world>; -l recalls from the
+  local history (TF output); -i recalls from the input history; and -g
+  recalls from the global history (local and all worlds).
+
+  Lines will be displayed with their original attributes; the
+  switches following "-a" can be used to suppress specific attributes.
+
+  <range> can be one of the following:
+
+  1. <number>
+  2. <number1>-<number2>
+  3. -<number>
+  4. <number>-
+
+  The first format will recall <number> lines backward, so /recall -g 10
+  would recall the last ten lines printed in the output window.
+
+  The second format uses the line numbers in the history buffer as a
+  range.  "/recall -ag -wTT #12-14" recalls line numbers #12, #13 and #14
+  from the history buffer of world TT, even if they were gagged.
+
+  The third format recalls a single line, <number> lines backward in the
+  history buffer.  So "/recall - -5" would recall the fifth-most-recent
+  line from the current world.  Note the '-' which marks the end of the
+  options, so that '-5' is interpreted as a range, and not a '5' option.
+
+  The fourth format recalls a single line, using the line numbers in the
+  history buffer.  "/recall 42-" is equivalent to "/recall 42-42".
+
+  The optional preceding '#' tells TF to prefix the output with line
+  numbers.  NOTE: When using the /quote command with the '#' option,
+  which quotes the output of the recall command, the '#' that tells
+  /quote to execute a recall command does NOT tell /recall to prefix
+  with line numbers.  You must use an additional # in order to do
+  that.
+
+  If <pattern> is given, only lines in the given range that match
+  <pattern> will be recalled.
+
+  See: history, attributes, QUOTE
+
+@@@@redef
+
+  Format:
+
+  /REDEF [OFF|ON]
+  ___________
+
+  Sets the flag "redef".  This flag determines whether macros, worlds,
+  and keybindings can be redefined without undefining them first.
+
+  The flag "redef" defaults to OFF.
+
+  See: flags, macros, ADDWORLD, BIND, DEF, UNDEF, UNWORLD
+
+@@@@repeat
+
+  Format:
+
+  /REPEAT [-w[<world>] [-<time>] <count> <command>
+  ___________
+
+  Repeats <command>, <count> times.  <command> may be any legal macro
+  body.  This works through a tiny-process, i.e. it runs concurrently
+  with normal input and output.
+
+  /repeat can be begun with a time argument, which is a value in
+  seconds for the delay between command executions.  Otherwise, the
+  user variable "ptime" is used.
+
+  Socket commands generated by /repeat will be send to the foreground
+  world by default.  If -w<world> is given, commands will be sent to
+  that world instead.  If -w is given, commands will be sent to the
+  world that was current when the /repeat was started.
+
+  Since the first run is not done until after the first interval, a
+  useful trick is to use "/repeat -<time> 1 <command>" to delay the
+  execution of a command.
+
+  See: processes, FLAGS, VARIABLES
+
+@@@@savebind
+@@@@saveedef
+@@@@saveegag
+@@@@saveehilite
+@@@@saveehook
+@@@@saveetrig
+@@@@save
+
+  Format:
+
+  /SAVE <file> [-n<shots>] [-p<pri>] [-c<chance>] [-t<pattern>] [-w<world>]
+        [-h<hook>] [-b<bind>] [-a[ngGurfdhb]] [-iI] [<name>] [= <body>]
+  ___________
+
+  Saves specified macros to <file>.  The macro is specified in the same
+  way as in the /list command; see LIST for details.  Invisible macros
+  will not be saved unless "-i" is specified.
+
+  Warning:  if <file> already exists, its original contents will be lost
+  and replaced with the specified macros.
+
+  The standard macro library also defines the commands /savedef,
+  /savebind, /savehilite, /savegag, /savetrig, and /savehook.
+
+  See: macros, patterns, attributes, library, DEF, LIST, LOAD
+
+@@@@saveworld
+
+  Format:
+
+  /SAVEWORLD [<file>]
+  ___________
+
+  Saves world definitions to <file> if specified, otherwise from the file
+  named in the body of the WORLDFILE macro.
+
+  See: worlds, library, ADDWORLD
+
+@@@@send
+
+  Format:
+
+  /SEND [-W] [-w[<world>]] <text>
+  ___________
+
+  Sends <text> to <world>.  If "-W" is given, <text> is sent to all
+  connected worlds.  If "-W" and "-w" are omitted, <text> is sent to
+  the current world.  /send does not execute the SEND hook.
+
+@@@@sh
+
+  Format:
+
+  /SH [<command>]
+  ___________
+
+  Creates a subshell to execute <command>, or an interactive shell. If
+  in visual mode, TF will fix the screen first.
+
+  If the "shpause" flag is set, Fugue will wait for a keypress before
+  returning.
+
+  See: SHPAUSE
+
+@@@@shpause
+
+  Format:
+
+  /SHPAUSE [OFF|ON]
+  ___________
+
+  Sets the flag "shpause".  This flag determines whether Fugue will
+  wait for a keypress before returning from an /sh command.
+
+  The "shpause" flag defaults to OFF.
+
+  See: flags
+
+@@@@sockmload
+
+  Format:
+
+  /SOCKMLOAD [OFF|ON]
+  ___________
+
+  Sets the flag "sockmload".  This flag determines whether Fugue will
+  load world macro files upon moving to a socket with the SOCKETB and
+  SOCKETF keys (normally [ESC]B and [ESC]F; see /dokey), or when the
+  /world command is issued and Fugue is already connected to the world
+  given. When off, TF will only load macro files when it first connects
+  to a world.
+
+  Note that much of the work of /sockmload can be done with a WORLD
+  hook.
+
+  The "sockmload" flag defaults to OFF.
+
+  See: flags, worlds
+
+@@@@sub
+
+  Format:
+
+  /SUB [OFF|ON|FULL]
+  ___________
+
+  Sets the flag "sub".
+
+  If the flag "sub" is OFF, all lines except for history substitutions
+  (line beginning with '^') and commands (/) are sent as-is to the
+  socket.
+
+  If the flag "sub" is ON, the sequences "%\" and "%;" are substituted
+  with newlines, and the sequence "%%" is substituted with "%", and the
+  sequence "\nn" is substituted with the character with decimal ASCII
+  code <nn>.  This does not happen to commands and history substitutions.
+
+  If the flag "sub" is FULL, text is processed just as if it were the
+  body of a macro (see "expansion") called without any arguments. This
+  allows you to have in-line macros in regular input.
+
+  The flag "sub" defaults to OFF.
+
+  See: flags, general, expansion
+
+@@@@act
+@@@@reply
+@@@@trig
+
+  Format:
+
+  /TRIG <pattern> = <body>
+  ___________
+
+  Sets up an unnamed macro with an associated trigger.  The
+  trigger has normal attribute, priority 1, probability 100%, and
+  executes <body> when triggered.
+
+  See: triggers, expansion, DEF, TRIGP, TRIGC, TRIGPC, UNTRIG
+
+@@@@trigc
+
+  Format:
+
+  /TRIGC <chance> <pattern> = <body>
+  ___________
+
+  Sets up an unnamed macro with an associated trigger.  The
+  trigger has normal attribute, priority 1, probability <chance> (in
+  percentage), and executes <body> when triggered.
+
+  See: triggers, expansion, DEF, TRIG, TRIGP, TRIGPC, UNTRIG
+
+@@@@trigger
+
+  Format:
+
+  /TRIGGER <text>
+  ___________
+
+  Executes any trigger whose pattern match <text>, just as if <text>
+  had come from a socket.
+
+  See: triggers
+
+@@@@trigp
+
+  Format:
+
+  /TRIGP <pri> <pattern> = <body>
+  ___________
+
+  Sets up an unnamed macro with an associated trigger.  The trigger has
+  normal attribute, priority <pri>, probability 100%, and executes
+  <body> when triggered.
+
+  See: triggers, expansion, DEF, TRIG, TRIGC, TRIGPC, UNTRIG
+
+@@@@trigpc
+
+  Format:
+
+  /TRIGPC <pri> <chance> <pattern> = <body>
+  ___________
+
+  Sets up an unnamed macro with an associated trigger.  The trigger has
+  normal attribute, priority <pri>, probability <chance>, and executes
+  <body> when triggered.
+
+  See: triggers, expansion, DEF, TRIG, TRIGP, TRIGC, UNTRIG
+
+@@@@unbind
+
+  Format:
+
+  /UNBIND <sequence>
+  ___________
+
+  Removes a macro with the keybinding <sequence>.
+
+  See: general, BIND, PURGE
+
+@@@@undef
+
+  Format:
+
+  /UNDEF <name>
+  ___________
+
+  Removes a macro with the name <name>.
+
+  See: macros, DEF, PURGE, UNDEFN, UNDEFT, UNTRIG, UNHOOK
+
+@@@@undefn
+
+  Format:
+
+  /UNDEFN <number> ...
+  ___________
+
+  Removes macros with the numbers specified in the arguments.  Macro
+  numbers can be determined with /list.
+
+  See: macros, DEF, LIST, PURGE, UNDEF
+
+@@@@undeft
+
+  Format:
+
+  /UNDEFT <trigger>
+  ___________
+
+  Removes a macro with a trigger associated with it that is triggered
+  by the pattern <trigger>.
+
+  See: macros, trigger, DEF, PURGE, UNDEF
+
+@@@@unhook
+
+  Format:
+
+  /UNHOOK <event> [<pattern>]
+  ___________
+
+  Removes a macro with an associated hook on <event> <pattern>.
+
+  See: hooks, HOOK, PURGE, UNDEF
+
+@@@@untrig
+
+  Format:
+
+  /UNTRIG <trigger>
+  ___________
+
+  Removes a macro with an associated trigger that is triggered
+  by the pattern <trigger> and has no attributes.
+
+  See: triggers, TRIG, PURGE, UNDEF
+
+@@@@unworld
+
+  Format:
+
+  /UNWORLD <name>
+  ___________
+
+  Removes a world with the name <name>.  The history for world <name>
+  will be deleted, although it may still be in the global history.
+
+  See: worlds, ADDWORLD
+
+@@@@version
+
+  Format:
+
+  /VERSION
+  ___________
+
+  Displays the TinyFugue version you're running.
+
+@@@@visual
+
+  Format:
+
+  /VISUAL [OFF|ON]
+  ___________
+
+  Sets the flag "visual".  This flag determines whether Fugue will run
+  in the visual mode.  In visual mode, the screen is divided into an
+  input window and an output window.
+
+  See: general
+
+@@@@watchdog
+
+  Format:
+
+  /WATCHDOG [OFF|ON] [<n1> [<n2>]]
+  ___________
+
+  Sets the flag "watchdog".  This flag determines whether Fugue will
+  watch for identical lines and suppress them.  Fugue looks for lines
+  which have occurred <n1> times out of <n2> (<n1> defaults to 2 and
+  <n2> to 5) and suppress them, so with the default settings Fugue
+  will suppress any lines that have occurred 2 times out of the last 5.
+
+  The <n1> and <n2> settings for /watchdog are distinct from the <n1>
+  and <n2> settings for /watchname.
+
+  The flag "watchdog" defaults to OFF.
+
+  See: flags, WATCHNAME
+
+@@@@watchname
+
+  Format:
+
+  /WATCHNAME [OFF|ON] [<n1> [<n2>]]
+  ___________
+
+  Sets the flag "watchname".  This flag determines whether Fugue will
+  watch for players displaying lots of output.  Fugue looks for names
+  which have begun the line <n1> times out of <n2> (<n1> defaults to 4
+  and <n2> to 5) and gag that person (with a message), so with the
+  default settings Fugue will gag any person whose name has begun 4 of
+  the last 5 lines.
+
+  The <n1> and <n2> settings for /watchname are distinct from the <n1>
+  and <n2> settings for /watchdog.
+
+  The flag "watchname" defaults to OFF.
+
+  See: flags, WATCHDOG
+
+@@@@world
+
+  Format:
+
+  /WORLD [-]<worldname>
+  /WORLD <host> <port>
+  ___________
+
+  Attempts to open a socket connected to the world <worldname>.
+  <worldname> must be one of the worlds Fugue knows about through the
+  addworld command or through the config file.  "/world <host> <port>"
+  will define a temporary world with the given address, and try to
+  connect to it.
+
+  If a dash is specified before the world name, Fugue will connect to
+  the world but will not call the LOGIN hook (that is, try to login
+  automatically), even if the "login" flag is on.
+
+  If Fugue succeeds in connecting, the following will occur:  the new
+  socket is added to the list of open sockets; the new socket is
+  brought into the foreground (thus calling the WORLD hook); the macro
+  file for the new world is loaded (if one is defined, and the
+  "sockmload" flag is on); the CONNECT hook is called; and the LOGIN
+  hook is called (if the "login" flag is on).
+
+  If TF was compiled with the CONNECT option and the socket can not be
+  opened immediately, it will continue to try to connect in the
+  background, but remain on the current world and allow you to do other
+  things until the connection succeeds or fails.  Without the CONNECT
+  option, TF will block (freeze) until the connection succeeds.  This
+  usually isn't very long, but can take up to 90 seconds or more if the
+  network is lagged.  Hitting the interrupt or suspend key (usually ^C
+  and ^Z) will kill the connection and break the block.
+
+  See: worlds, sockets, ADDWORLD
+
+@@@@wrap
+
+  Format:
+
+  /WRAP [<column>|OFF]
+  ___________
+
+  Sets the user variable "wrap".  This variable determines the column
+  at which words are to be wrapped.  Words that would extend past this
+  column are wrapped to the next line.  If the variable "wrapspace" is
+  not 0, the second through last lines of wrapped text will be indented
+  by that many columns.
+
+  "/wrap off" sets "wrap" to 0, disabling it.
+
+  The variable "wrap" defaults to one less than the number of columns
+  on the terminal.
+
+  If logging and wrap are both on, lines will be wrapped in the log file.
+
+  See: general, variables, WRAPSPACE
+
+@@@@wrapspace
+
+  Format:
+
+  /WRAPSPACE [<number>|OFF]
+  ___________
+
+  Sets the user variable "wrapspace".  This variable determines the
+  number of columns to indent the second through last lines of wrapped
+  text.  "/wrapspace off" sets "wrapspace" to 0.
+
+  If the variable "wrap" is 0, "wrapspace" is ignored.
+
+  The variable "wrapspace" defaults to 0.
+
+  See: general, variables, WRAP
+
+@@@@author
+@@@@tf
+@@@@tinyfugue
+      ______                                                  
+     /     /\  TinyFugue was derived from a client initially  
+    /   __/  \ written by Anton Rang (Tarrant) and later      
+    |  / /\  | modified by Leo Plotkin (Grod).  The first     
+    |  |/    | 'Fugue' modifications were written by Greg     
+    |  X__/  | Hudson (Explorer_Bob).  Fugue is currently     
+    \ /      / maintained by Ken Keys (Hawkeye), who can be   
+     \______/  reached at kkeys@ucsd.edu.                     
+                                                              
+               No copyright 1992, no rights reserved.         
+               Fugue is in the public domain.                 
+
+@@@@commands
+@@@@index
+
+Help is available on the following commands:
+
+  ADDWORLD      GRAB          LP            REDEF         UNDEFN      
+  BACKGROUND    HELP          LPQUOTE      +REPEAT        UNDEFT      
+  BAMF          HILITE        MECHO        +SAVE         +UNHOOK      
+  BEEP          HPRI          MORE          SAVEWORLD     UNTRIG      
+ +BIND         +HOOK          NOGAG         SEND          UNWORLD     
+  BORG          INPUT         NOHILITE      SH            VERSION     
+  CAT           ISIZE         PS            SHPAUSE       VISUAL      
+  CLEARDONE     KECHO         PTIME         SOCKMLOAD     WATCHDOG    
+  CLEARFULL     KILL         +PURGE         SUB           WATCHNAME   
+  DC            LCD           PURGEWORLD    TRIG         +WORLD       
+ +DEF          +LIST          QECHO         TRIGC         WRAP        
+ +DOKEY         LISTSOCKETS   QUIET         TRIGGER       WRAPSPACE   
+  ECHO          LISTWORLDS    QUIT          TRIGP                     
+  EDIT          LOAD          QUITDONE      TRIGPC                    
+  GAG          +LOG          +QUOTE         UNBIND                    
+  GPRI          LOGIN         RECALL        UNDEF         BOARD
+
+       * new command (version 2.1)           + modified command
+
+@@@@startup
+
+  Syntax:
+
+  tf [-f<file>] [-ln] [<world>]
+  tf [-f<file>] <host> <port>
+  ___________
+
+  At startup, TF will load commands from the standard macro file and
+  your personal configuration file (~/.tfrc).  Then, TF will try to
+  connect to <world>.  If <world> is omitted, it will try to connect to
+  the first world defined in the configuration file(s).  TF with <host>
+  and <port> arguments will define a temporary world and try to connect
+  to it.  The <host> may be an IP number or regular name format.  If no
+  world is specified, or TF can not connect to the specified world, TF
+  will start up in unconnected mode.
+
+  Options:
+    -f<file>   Load <file> instead of ~/.tfrc at startup.
+    -l         Disable automatic login.
+    -n         Do not connect to any world automatically at startup.
+
+@@@@interface
+@@@@mode
+@@@@general
+
+  TinyFugue has two main interface modes-- visual and non-visual.
+  Visual mode is enabled with the "/visual on" command.
+  See:  VISUAL
+
+  The visual interface has two windows:  the bottom window is for
+  input, the top for output.  TF will scroll output if your terminal
+  has that capability, otherwise output will wrap bottom-to-top in the
+  output window, clearing two lines ahead.  The /isize, /cleardone, and
+  /clearfull commands can be used to customize the visual display.
+  See:  ISIZE, CLEARDONE, CLEARFULL
+
+  The non-visual interface uses the full screen.  Input and output are
+  both displayed on the bottom line.  If you are typing and output
+  appears, your input is cleared, the output is displayed, and your
+  input is redisplayed on the last line.  If your input has wrapped
+  around to a second or third line, only the last line will be cleared
+  and redisplayed.
+
+  In both modes, output text is wrapped around at a right margin of
+  one less than the number of columns on your screen (usually 79)
+  unless wrapping has been turned off.  In addition, if you set the
+  variable "wrapspace" with /wrapspace <n>, all lines after the first
+  in a wrapped piece of output will be indented by <n> spaces.
+  See:  WRAPSPACE
+
+  TF supports a variety of input functions on special key sequences;
+  see DOKEY to get a list.  These functions, such as editing the text
+  in the input buffer, recalling previous commands, and moving back and
+  forth between socket connections, may be accessed using the special
+  keys defined by the /bind command, or via the /dokey command.
+  See:  BIND, DOKEY
+
+  In addition to being able to define key sequences to these input
+  functions, TF also allows you to bind your own commands to special
+  keys, using the /bind command.
+  See:  BIND
+
+  TF can perform various substitutions on your input, depending on the
+  setting of the /sub command.  The /sub command also applies to text
+  sent via the /bind and /repeat commands.
+  See:  SUB
+
+  TF will treat any input line beginning with a single '/' as a
+  command or macro call (see "macros").  TF will treat any line
+  beginning with a '^' as an input history substitution.
+  See:  history
+
+  Socket output goes through a number of checks before being
+  displayed.  First, it is added to an output history list.  Then, the
+  text is checked to see if it sets off any trigger patterns.  At the
+  same time, TF checks to see if the text has been gagged or hilited.
+  If the text was not gagged, TF also checks to see if it should be
+  suppressed due to the effects of the /quiet, /watchdog and /watchname
+  commands, and may go so far as to ask if you want to gag someone
+  who's been overactive.
+  See:  triggers, QUIET, WATCHDOG, WATCHNAME
+
+@@@@variables
+
+  TinyFugue has a number of runtime options which are set as numbers
+  or strings.  A brief description of these follows. Not listed are
+  the settings for /watchdog and /watchname.  Variable types are S for
+  string and N for number.
+
+    Variable  Default  Command     Description
+  -------------------------------------------------------------------
+  N isize     3        /isize      Input window size
+  N gpri      0        /gpri       Priority of subsequent /gags
+  N hpri      0        /hpri       Priority of subsequent /hilites
+  S kprefix            /kecho      Prefix for keyboard input echoing
+  S mprefix            /mecho      Prefix for macro expansion echoing
+  N ptime     1        /ptime      Seconds to wait between process runs
+  S qprefix            /qecho      Prefix for /quote echoing
+  N wrap      col - 1  /wrap       Column at which to wrap
+  N wrapspace 0        /wrapspace  Spaces to indent wrapped text
+
+@@@@flags
+
+  All flags can be set by "/<flag> [OFF|ON]" with the exception of
+  "hilite" and "gag", which are set with "/hilite", "/nohilite", "/gag"
+  and "/nogag".  The "bamf" and "sub" flags each have a third state
+  which is different from either the ON or OFF settings.
+
+  Flags are preceded with their default states, 1 being ON and
+  0 being OFF.
+
+  1 background - Triggering on and recording text from background worlds.
+  0 bamf       - Reconnecting to other MUDs directed by server (portals).
+  0 board      - Use additional window to display backgammon boards.
+  1 borg       - Enables triggers.
+  0 clearfull  - Clear input window rather than scroll when full.
+  0 cleardone  - Clears input window on carriage return.
+  1 gag        - Enable gag attribute in triggers.
+  1 hook       - Enable hooks.
+  1 hilite     - Enable u, r, f, d, h, and b attributes in triggers.
+  0 kecho      - Echoing of keyboard text.
+  1 login      - Enable automatic login.
+  0 lp         - Displays partial lines after a short timeout.
+  0 lpquote    - Waits for "*^H" for /quote and /repeat.
+  0 mecho      - Echoing of macro expansion process.
+  0 more       - Output paging (somewhat like the more filter).
+  0 qecho      - Echoing of quote text.
+  0 quiet      - Suppress MUD login text.
+  0 quitdone   - Quit upon disconnection from last MUD.
+  0 redef      - Allows redefinition of existing macros, worlds, & bindings.
+  0 shpause    - Wait for a keypress after shelling out.
+  0 sockmload  - Load macro files on socket moves.
+  0 sub        - Newline substitution in normal text.
+  0 visual     - Windowing.
+  0 watchdog   - Suppress repeated lines.
+  0 watchname  - Suppress overactive players.
+
+@@@@worlds
+
+  Associated commands:
+
+  /addworld
+  /unworld
+  /purgeworld
+  /world (see also "sockets")
+  /saveworld
+  /listworlds
+
+  Fugue stores a list of "worlds" that it knows about.  Each world has
+  six strings associated with it:
+
+    A name (which is simply a label for the world)
+    A character name
+    A character password
+    A host address
+    A host port
+    A macro file (optional).
+
+  The character name and password are used for the automatic login.
+  Fugue also keeps track of a world with the name "default", which is
+  just a dummy world with a character name and password, and
+  optionally a macro file.  After the default world is defined, worlds
+  which have left out the character and password fields still will
+  attempt to log in (assuming the "login" flag is on).  If the default
+  world has a macro file, worlds without macro files will use the
+  default macro file.
+
+  The world's macro file is a list of macro definitions to be loaded
+  when a socket is opened connecting to a particular world.  If the
+  flag "sockmload" is on, this file will also be loaded whenever the
+  user switches to a world with the SOCKETB and SOCKETF keys (see
+  "sockets", /dokey).
+
+  World strings can be accessed using reentrance.  The following macro
+  names will expand to the fields associated with the current world
+  (not the foreground world; see /help sockets):
+  
+    world_name
+    world_character
+    world_password
+    world_host
+    world_port
+    world_mfile
+
+  This is only useful inside macro expansion, generally.
+
+  Example:
+  
+  /def curw = :notes that the current world is $world_name$, to which
+   he is connected as $world_character$.
+
+  This would tell the rest of the world some stuff they probably don't
+  care about, namely the label Fugue has assigned to the current world
+  and the character name it logged on under.
+
+@@@@sockets
+
+  Associated commands:
+
+  /world (see also "worlds")
+  /listsockets
+  /dc
+  /quitdone
+  /background
+  /bamf
+  /login
+  /sockmload
+  Next/previous socket keys (SOCKETF/SOCKETB, default [ESC]F and [ESC]B)
+
+  TF can connect to multiple sockets.  Only one of these can be
+  displayed at a time; this is called the foreground socket, other
+  sockets are in the background.  Text from background sockets will be
+  triggered and stored in history immediately upon receipt (if the
+  "background" flag is on).  You can connect to a new world in one of
+  three ways:
+
+  1. By specifying the world name or address on a command line.
+  2. By receiving a portal message from the socket when the "bamf"
+     flag is on.  (See "bamf" for portal details.)
+  3. By using the /world command with a world name.
+
+  When Fugue connects to a socket, it adds it to the sockets list. You
+  can disconnect from a socket, removing it from the list, with the /dc
+  command.  If you are disconnected (either with /dc or because the
+  socket closes) from the last socket you are connected to and the
+  "quitdone" flag is on, Fugue will exit.
+
+  You can determine what sockets you are connected to with the
+  /listsockets command.
+
+  You can move through sockets with the next socket and previous
+  socket keys, which default to [ESC]B and [ESC]F and can be modified
+  with /bind.
+
+  /world with no arguments connects you to the first defined world.
+  /world'ing to a world which you are already connected to moves
+  you to that socket rather than reconnecting you.
+
+  Moving to a socket that one is already connected to, either with the
+  Next and previous socket keys or with the /world command, will load a
+  world's macro file if the flag "sockmload" is on (see /sockmload)
+
+  At all times, there is a foreground socket and a current socket.  The
+  foreground socket is the one that is being displayed.  In visual
+  mode, the name of the foreground world will appear on the status
+  bar.  The current socket is the socket to which commands are sent.
+  The current socket is almost always the same as the foreground
+  socket, except:  1) when a trigger is called from any socket, that
+  socket becomes the current socket for the duration of the trigger
+  execution; 2) when a /repeat or /quote with world redirection runs,
+  that world's socket becomes the current socket for the duration of
+  the process execution.
+
+@@@@smatch
+@@@@wildcards
+@@@@patterns
+
+  TF patterns are used in matching triggers and in the /purge* and
+  /list* commands.
+
+  There are four types of things TF looks for in patterns:
+
+  1. The '*' character matches any number of characters.
+
+  2. The '?' character matches any one character.
+
+  3. Square brackets ([]) can be used to match any one of a sequence
+     of characters.  Ranges can be used.  If '^' is the first
+     character, the pattern will match any character NOT contained.
+
+  4. Curly braces ({}) can be used to match any one of a sequence of
+     words. They operate by comparing the sequences of words, divided
+     by '|' characters, to a word in the string being matched.  They
+     will only match complete words: "{foo}*" and "{foo}p" do not
+     match "foop" and "*{foo}" and "p{foo}" do not match "pfoo".
+
+     Patterns containing "{}" can easily be meaningless; a {} pattern
+     will match nothing if it:
+
+       (a) contains spaces,
+       (b) does not follow a wildcard, space or beginning of string,
+       (c) is not followed by a wildcard, space or end of string.
+
+  "d*g" matches "dg", "dog", "drug", "debug", "dead slug", etc.
+  "d?g" matches "dog", "dig" and "dug" but not "dg" or "drug".
+  "M[rs]." matches "Mr." and "Ms."
+  "M[a-z]" matches "Ma", "Mb", etc.
+  "[^a-z]" matches anything but an alphabetical character.
+  "{storm|chup*}*" matches "chupchup fehs" and "Storm jiggles".
+  "{storm|chup*}*" does NOT match "stormette jiggles".
+
+  All pattern matches are case insensitive.
+  All special characters may be escaped with a '\'.
+
+@@@@macros
+
+  Associated commands:
+
+  /def
+  /hook, /unhook
+  /trig, /hilite, /gag
+  /bind, /unbind
+  /undef, /undefn, /undeft
+  /purge
+  /list
+  /load, /save
+
+  Macros provide a shorthand for executing a commands or sequence of
+  commands, by giving them a simple name.  Macros may be called in four
+  ways:  a command of the form "/<name>", by triggers (see the section
+  on "triggers"), by hooks (see the section on "hooks"), or by
+  keybindings.
+
+  A macro name is the way of calling it from normal input or from
+  another macro.  You can execute a macro by typing "/<name>".
+
+  A macro body, or execution text, is the commands and/or text executed
+  when the macro is called.  This text is subject to macro expansion
+  processing (see "expansion").
+
+@@@@triggers
+
+  Associated commands:
+
+  /def
+  /trig, /trigp, /trigc, /trigpc
+  /gag, /hilite
+  /trigger
+  /background
+
+  Triggers are a method of calling a macro based on text received from
+  the socket.  A macro with a trigger is executed when a line of
+  incoming text matches its trigger pattern (see the section on
+  "patterns").  If the "background" flag is on, text from any world can
+  set off a trigger.  Triggers can also be set off with the command
+  /trigger.
+
+  Triggers do not exist independently of macros; they are part of them.
+
+  A trigger has various characteristics:
+
+  1. It has priority, which affects its attributes and its execution
+     text. Socket text which matches multiple triggers will trigger
+     the macro with the highest-priority trigger associated with it.
+  2. It has probability, which only affects its execution text.  A
+     trigger will only execute its execution text <probability>% of
+     the times it is triggered.
+  3. It has display attributes, which are any combination of normal, gag,
+     underline, reverse, flash, dim, hilite, or bell, which affects the
+     way the text which triggered it is (or is not) displayed.
+  4. It may be a multi-shot trigger, in which case it and the macro it
+     is associated with is removed after executing a specified number
+     of times.
+
+  For purposes of argument substitution, a macro's arguments are the
+  line which triggered it when it is executed as a result of a
+  trigger.
+
+  If socket text matches multiple trigger patterns and the trigger
+  priorities are not enough to determine a single trigger (i.e. there
+  are multiple triggers of the highest priority level available), a
+  trigger is randomly selected between them.
+
+  Trigger execution text means the execution text of the macro it is
+  associated with.
+
+  The /def command is the only way to specify a multi-shot trigger.  All
+  other commands which define triggers will create permanent triggers.
+
+@@@@hooks
+
+  Associated commands:
+
+  /def
+  /hook
+  /unhook
+
+  Hooks are a method of calling a macro based on special events within
+  TF, in much the same way as triggers call macros based on socket
+  text.  Hooks allow the user to customize the behavior of TinyFugue
+  and automate special functions.
+
+  A hook definition has two parts:  an <event> and a <pattern>.  When
+  the event occurs, the macro will be executed if the arguments
+  supplied by the event match the macro's <pattern> (see the section on
+  "patterns").
+
+  Most hooks have a default message associated with them, which will be
+  displayed with the attributes of the hook if one is defined.  Thus a
+  hook with a gag attribute will suppress the display of the message.
+
+  Hook may be have multi-shots, in which case it and the macro it is
+  associated with is removed after executing a specified number of
+  times.
+
+    Event Name  Arguments          Default Message or Action
+    ----------  ---------          -------------------------
+    ACTIVITY    world              '% Activity in world <world>'
+    BACKGROUND  world              '% Trigger in world <world>'
+    BAMF        world              '% Bamfing to <world>'
+    CONFAIL     world, reason      '% Connection to <world> failed: <reason>'
+    CONNECT     world              (successful connection to <world>)
+    DISCONNECT  world              '% Connection to <world> closed.'
+    HISTORY     world              '% <world> history buffer full.'
+    KILL        pid                '% Killing process <pid>'
+    LOAD        file               '% Loading commands from file <file>'
+    LOADFAIL    file, reason       '% <file>: <reason>'
+    LOGIN       world, char, pass  (automatic TinyMUD-style login)
+    MAIL                           '% You have new mail.'
+    MORE                           '--More--' (reverse hilite)
+    PENDING     world              '% Connection to <world> in progress.'
+    PROCESS     pid                '% Starting process <pid>'
+    REDEF       object, name       '% Redefined <object> <name>'
+    RESIZE      columns, lines     (window resized)
+    RESUME                         '% Resuming TinyFugue'
+    SEND        keyboard text      (keyboard text sent to socket)
+    SHELL       type, command      '% Executing <type>: "<command>"'
+    WORLD       world              '---- World <world> ----'
+
+  Notes:
+
+    The ACTIVITY hook is called only the first time activity occurs on
+    a given socket.
+
+    The DISCONNECT hook will be called if you use the MUD's "QUIT"
+    command.  Use /dc to avoid this.
+
+    The MAIL hook may be called falsely if you read your mail without
+    deleting your mail file.
+
+    Please do not use CONFAIL to write a simple repeating connect macro.
+    The standard library provides a "smart" version of such a macro,
+    called /retry.  See "library".
+
+    When connecting to a new sockets, these hooks may be called, in
+    this order:  WORLD, LOAD (if "sockmload" is on), CONNECT, and LOGIN
+    (if "login" is on).
+
+  Examples:
+
+    1) /hook activity|disconnect {TT|SM} = /world %1
+
+       will cause TF to automatically switch to TT or SM if activity
+       occurs or you get disconnected from either one.
+
+    2) /def -n1 -agG -hPROCESS = /def -n1 -agG -h"KILL %1"
+
+       will suppress display and recording of the next "% Starting
+       process <pid>" message and its corresponding "% Killing process
+       <pid>" message.
+
+    3) /def -ag -hSEND = /send :%*
+
+       will effectively add a ':' to the beginning of every line sent
+       to the socket from the keyboard, by suppressing the transmission
+       of the original text and using /send to transmit a ':' followed
+       by the text.
+
+    4) /def -h"LOGIN KoBra *" -p2  = $world_character$%;$world_password$
+
+       will send your name and password (if they were defined in an
+       /addworld command) to the mud in LP-MUD format automatically
+       upon connecting to world KoBra.  The "login" flag must be on.  A
+       priority greater than 1 is needed to override the default login
+       hook defined by the standard library.
+
+    5) /def -p2 -h"WORLD lp*" = /lp on
+       /def -p1 -hWORLD = /lp off
+
+       will turn on the "lp" flag when you switch to a world whose name
+       matches "lp*", and turn it off for other worlds.
+
+  See: DEF, HOOK, macros
+
+@@@@hilites
+@@@@gags
+@@@@underline
+@@@@reverse
+@@@@flash
+@@@@dim
+@@@@bell
+@@@@bold
+@@@@attributes
+  
+  Many TF commands (/def, /echo, /edit, /list, /purge, /recall, /save)
+  take an attribute argument of the form -a[ngGurfdhb].  The flags
+  following the '-a' will determine the attributes (normal, gag,
+  norecord, underline, reverse, flash, dim, hilite, bell) used to
+  display the text produced by the command, or matched by a trigger.
+  Norecord ('G') prevents the line from being recorded in history.
+  Attributes not supported by your terminal type will be ignored.
+
+  All attributes except 'n' may be combined usefully; 'n' overrides all
+  others.  (Even gags can be combined with other attributes:  combining
+  'g' and 'h', for example, will gag the text initially, but will
+  hilite it if is is recalled with /recall -ag.)
+
+@@@@arguments
+@@@@substitution
+@@@@expansion
+
+  The text of a macro body is processed several times before being
+  sent off through the socket.  The following things are checked for:
+
+  1. Newline and character code substitution.  The sequences "%\" and "%;"
+  are converted into newlines.  The sequence "\<number>" is converted to
+  the character with decimal character code given by <number>.
+  Example: ":part 1.%\:part 2." is sent as two lines.
+
+  2. Reentrance substitution.  A single slash signifies the beginning
+  of a reentrant command.  Another single slash, a newline, or the end
+  of the string signifies the end.  Reentrant commands can contain
+  argument substitutions and macro body substitutions.  A reentrant
+  command can be a command call or a macro call.  Sequences of
+  multiple slashes are compressed by one during this check.
+  Example: The macro body text "/def foo=bar/" would define a macro
+   "foo" that had the body "bar".
+  Example: The macro body text "Thinks about //s" would be compressed
+   to "Thinks about /s".
+
+  3. Macro body substitution.  A single '$' signifies the beginning of
+  the name of a macro name to substitute the body of.  Another single
+  '$', a newline, or the end of the string signifies the end.  Macro
+  body substitution can contain argument substitutions.
+  Example: The macro body text "$foo$" would be replaced with the body
+   of the macro with the name "foo".
+
+  4. Argument substitution.  Argument substitutions begin with a '%',
+  followed by '{', an argument selector, an optional default value, and
+  a '}'.  The '{' '}' pair may be omitted if no default value is
+  given.  The selector can be any of:
+
+     A. Direct numbered arguments.  "1", "2", etc., are replaced with the
+     corresponding arguments.
+
+     B. All arguments.  "*" and "0" will be replaced with the entire
+     argument line.
+
+     C. All arguments excepting a direct range.  "-1", "-2", etc., are
+     replaced with all arguments but the first, all but arguments but
+     the first and second, etc.
+
+     D. Numbered arguments starting at the end.  "L1", "L2", etc., are
+     replaced with the last argument, the second-to-last, etc. (L is
+     the same as L1.)
+
+     E. All arguments excepting a range from the end.  "-L1", "-L2", etc.,
+     are replaced by all except the last argument, all except the
+     second-to-last, etc. ("-L" is the same as "-L1").
+
+     F. Random argment.  "R" is replaced with a random argument, if
+     there are any arguments.
+
+     G. Escape.  "E" is replaced with an ESC character.
+
+     All letters can be uppercase or lowercase.
+
+     DEFAULT ARGUMENTS:  Any selector can be followed by a '-' and a
+     string; this string will be used if the selector produces an empty
+     string.  Thus "%{1-foofle}" is replaced with the first argument if
+     there is one, or "foofle" if there is none.
+
+  There are many examples of how to use all these symbols in the file
+  EXAMPLES in the distribution archive.  A couple of simple
+  illustrations are provided here:
+
+  Definition: /def ending = meister
+              /def greet = :waves to %{1-Jack}$ending$.
+  Command:    /greet
+  Sends:      :waves to Jackmeister.
+  Command:    /greet Dave
+  Sends:      :waves to Davemeister.
+
+  Definition: /def listworld = /listworlds %*
+  Command:    /listworld as*
+  Result:     executes /listworlds as*
+
+@@@@tinyprocesses
+@@@@processes
+
+  Associated commands:
+
+  /quote
+  /repeat
+  /ps
+  /kill
+  /ptime
+  /lpquote
+
+  The /quote and /repeat commands in Fugue are done by setting up
+  tinyprocesses-- processes that run concurrently with normal input
+  and output.
+
+  /ps can be used to get a listing of the currently running processes
+  and their process ID's (for use with /kill).
+
+  /kill can be used to terminate a processes.
+
+  Processes can be run based on two different criteria:
+
+  1. Normally, processes run whenever a specfic number of seconds
+     has elapsed.  The delay can be specified when the process is
+     started, or will default to the value of the user variable
+     "ptime".
+
+  2. If the "lpquote" flag is on, processes run whenever a "*^H"
+     string is received from the server.
+
+@@@@scrollback
+@@@@history
+
+  Associated commands:
+
+  /recall
+  /quote
+  ^<string1>^<string2>
+  Recall previous/next keys (RECALLB/RECALLF, default ^P and ^N)
+
+  TinyFugue stores lines in 4 different types of history lists.  Input
+  history records the last 50 commands from the keyboard.  Each world
+  has a world history, which stores 1000 lines of output from that
+  world.  Local history stores 100 lines of output generated by TF, i.e.
+  anything that didn't come from a world.  Global history is an
+  integrated list of 1000 lines from TF and every world.  The history
+  sizes are often changed in compilation.
+
+  /recall is used to display text from any of the history lists.
+  The /quote command may be used to quote out of any history list using
+  the /quote # feature.
+
+  ^<string1>^<string2> accesses the last command in the input history
+  containing <string1> and replaces it with <string2>, sending off the
+  modified line.
+
+  The recall previous and recall next keys (default ^P and ^N) bring up
+  previous and subsequent commands in the command history list for
+  editing.
+
+@@@@mail
+@@@@environment
+
+  TF will check for mail in the file named by the MAIL environment
+  variable.  If it is not defined, TF will check /usr/spool/mail/$USER.
+
+@@@@library
+
+  When TF is started, macros are loaded from the standard macro library
+  (tf.library).  These macros are marked with the invisible flag ("-i")
+  so they will not be processed by /list, /save and /purge unless
+  forced.  Redefining or undefining such a macro will clear the flag,
+  so customized macros can be listed, saved and purged.
+
+Filenames:
+  These macros may be redefined to any filename.
+  HELPFILE contains the name of the file read by /help.
+  LOGFILE contains the default filename used by /log.
+  MACROFILE, HILITEFILE, GAGFILE, TRIGFILE, BINDFILE, HOOKFILE, and
+    WORLDFILE are used by the /load* and /save* commands.
+
+List commands:
+  /listdef <spec>        - equivilent to '/list <spec>'.
+  /listhilite <spec>     - lists hilites on <spec>.
+  /listgag <spec>        - lists gags on <spec>.
+  /listtrig <spec>       - lists triggers on <spec>.
+  /listbind <spec>       - lists key bindings matching <spec>
+  /listhook <spec>       - lists hooks matching <spec>.
+
+Purge commands:
+  /purgedef <spec>       - purges macros whose name matches <spec>
+  /purgehilite <spec>    - purges macros with hilites on <spec>
+  /purgegag <spec>       - purges macros with gags on <spec>
+  /purgetrig <spec>      - purges macros with triggers on <spec>
+  /purgedeft <spec>      - purges named macros with tirggers on <spec>
+  /purgebind <spec>      - purges key bindings matching <spec>.
+  /purgehook <spec>      - purges hooks matching <spec>.
+
+Load commands:
+  /loaddef, /loadhilite, /loadgag, /loadtrig, /loadbind, /loadhook,
+  /loadworld.  All take a <file> argument; if omitted, the appropriate
+  default filename macro is used.
+
+Save commands:
+  /loaddef, /loadhilite, /loadgag, /loadtrig, /loadbind, /loadhook,
+  /loadworld.  All take a <file> and <spec> argument.  If <file> is
+  omitted, the appropriate default filename macro is used.  The <spec>
+  argument is used to select macros, as in the /list* commands.
+
+File compression:
+  The helpfile, ~/.tfrc, and files read with /load may be stored
+  compressed on disk.  If TF can not find a file with the specified
+  name, it will add COMPRESS_SUFFIX to the filename and try to read it
+  by piping it through COMPRESS_READ.  COMPRESS_READ should contain the
+  name of a shell command that takes a filename as an argument, and
+  prints its output on standard output.  The default values for
+  COMPRESS_SUFFIX and COMPRESS_READ defined in the library are ".Z" and
+  "uncompress -c".  Note:  /save does not write a compressed file.
+
+World connection commands:
+  /retry <world>
+    Try to connect to <world>; repeat every 2 minutes until successful.
+  /retry_off [<world>]
+    Cancels "/retry <world>" (default: all worlds)
+
+/keys [<mnem> = <key>]
+  Binds <key> to '/dokey <mnem>', or lists bindings if arguments are
+  omitted.  Provided only for backward compatibilty.  You should use
+  /bind or /def, and /list instead.
+
+Hilite commands:
+  /hilite_whisper, /hilite_page, /nohilite_whisper, and /nohilite_page
+  turn on or off hiliting several different page and whisper formats.
+
+Backward compatible macros:
+  /reply, /act, /nolog, /nologin, /nologme, /noquiet, and /nowrap are
+  provided for compatibility.
+
+@@@@hilite_page
+@@@@hilite_whisper
+@@@@keys
+@@@@retry
+@@@@filenames
+@@@@standard
+  See "library".
+
+@@@@
